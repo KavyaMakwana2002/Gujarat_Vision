@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gujarat Cyber Vision - Smart Road Safety & Surveillance System</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <!-- Leaflet GIS Map CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- HLS.js CDN for Government Live Stream Video Playback -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 flex h-screen overflow-hidden">
+
+    <!-- ========================================================================= -->
+    <!-- 1. UBHI NAVBAR (SIDEBAR) -->
+    <!-- ========================================================================= -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full z-20 shadow-2xl shrink-0">
+        
+        <!-- Logo / Header -->
+        <div class="h-20 flex items-center px-6 border-b border-slate-800 bg-slate-950/60">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 text-lg shadow-lg shadow-blue-600/10">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-extrabold tracking-wider text-white flex items-center gap-1.5 font-mono">
+                        SENTINEL <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">AI</span>
+                    </h2>
+                    <p class="text-[10px] text-slate-400 font-medium">Gujarat Cyber Vision</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vertical Menu Items -->
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1.5 text-sm font-medium">
+            
+            <!-- 1. Live Database -->
+            <button onclick="switchView('view-dashboard', this)" class="nav-item active-nav w-full flex items-center px-4 py-3 bg-blue-600 text-white rounded-xl shadow-md transition font-semibold text-left">
+                <i class="fa-solid fa-database w-6 text-center text-base"></i>
+                <span class="flex-1">Live Database</span>
+            </button>
+
+            <!-- 2. Camera Stream -->
+            <button onclick="switchView('view-camera', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-video w-6 text-center text-base"></i>
+                <span class="flex-1">Camera Stream</span>
+                <span class="flex h-2.5 w-2.5 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+            </button>
+
+            <!-- 3. Live Location -->
+            <button onclick="switchView('view-location', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-location-dot w-6 text-center text-base"></i>
+                <div class="flex-1 leading-tight">
+                    <span>Live Location</span><br>
+                    <span class="text-[10px] text-slate-500 font-normal">(80,000 cameras nu)</span>
+                </div>
+            </button>
+
+            <!-- 4. GIS Mapping -->
+            <button onclick="switchView('view-gis', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-map-location-dot w-6 text-center text-base"></i>
+                <span class="flex-1">GIS Mapping</span>
+            </button>
+
+            <!-- 5. Car Details -->
+            <button onclick="switchView('view-details', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-car-side w-6 text-center text-base"></i>
+                <div class="flex-1 leading-tight">
+                    <span>Car Details</span><br>
+                    <span class="text-[10px] text-slate-500 font-normal">(name, model, number, color)</span>
+                </div>
+            </button>
+
+            <!-- 6. Car Search -->
+            <button onclick="switchView('view-search', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-magnifying-glass w-6 text-center text-base"></i>
+                <span class="flex-1">Car Search</span>
+            </button>
+
+            <!-- 7. Record Video -->
+            <button onclick="switchView('view-record', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-compact-disc w-6 text-center text-base"></i>
+                <div class="flex-1 leading-tight">
+                    <span>Record Video</span><br>
+                    <span class="text-[10px] text-slate-500 font-normal">(camera stream na video)</span>
+                </div>
+            </button>
+
+            <!-- 8. All Alert Cars -->
+            <button onclick="switchView('view-alerts', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-triangle-exclamation w-6 text-center text-base text-red-400"></i>
+                <span class="flex-1 text-red-300 font-bold">All Alert Cars</span>
+            </button>
+
+            <!-- 9. Stolen Cars Details -->
+            <button onclick="switchView('view-stolen', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-mask w-6 text-center text-base"></i>
+                <span class="flex-1">Stolen Cars Details</span>
+            </button>
+
+            <!-- 10. Black List Cars Live Location -->
+            <button onclick="switchView('view-blacklist-loc', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left">
+                <i class="fa-solid fa-crosshairs w-6 text-center text-base text-rose-500"></i>
+                <span class="flex-1">Black List Cars Location</span>
+            </button>
+
+            <!-- 11. Remote Shop NVR (VPN Gateway / Different Network) -->
+            <button onclick="switchView('view-remote-nvr', this)" class="nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left border border-cyan-500/20 bg-cyan-950/10">
+                <i class="fa-solid fa-network-wired w-6 text-center text-base text-cyan-400"></i>
+                <div class="flex-1 leading-tight">
+                    <span class="text-cyan-300 font-semibold">Remote Shop NVR</span><br>
+                    <span class="text-[10px] text-slate-400 font-normal">(VPN / Different Network)</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Officer Info & Logout -->
+        <div class="p-3 border-t border-slate-800 bg-slate-950/40">
+            <div class="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 mb-2 flex items-center gap-2.5">
+                <div id="side-avatar" class="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-xs">A</div>
+                <div class="overflow-hidden">
+                    <p id="side-officer-name" class="text-xs font-bold text-slate-200 truncate">Officer Admin</p>
+                    <p id="side-officer-badge" class="text-[10px] font-mono text-blue-400 truncate">GJ-POL-007</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 rounded-xl transition font-semibold text-xs">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- 2. MAIN CONTENT AREA -->
+    <!-- ========================================================================= -->
+    <div class="flex-1 flex flex-col h-full relative overflow-hidden bg-slate-950">
+        
+        <!-- AADI NAVBAR (TOPBAR) -->
+        <header class="h-20 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between px-8 z-10 backdrop-blur-md">
+            <!-- Search Bar -->
+            <div class="relative w-80 md:w-96">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-search text-sm"></i>
+                </div>
+                <input type="text" id="topbar-search-input" onkeyup="searchVehicleGlobal()" placeholder="Search number plate, vehicle ID, type..." 
+                    class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-700/70 rounded-xl text-sm font-medium text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+            </div>
+
+            <!-- Topbar Actions & Profile -->
+            <div class="flex items-center gap-5">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-slate-400">STATUS:</span>
+                    <span class="text-emerald-400 font-bold">ONLINE</span>
+                </div>
+                <button class="relative p-2 text-slate-400 hover:text-blue-400 transition">
+                    <i class="fa-solid fa-bell text-lg"></i>
+                    <span class="absolute top-1 right-1 flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                </button>
+                <div class="flex items-center gap-3 border-l border-slate-800 pl-5">
+                    <div id="admin-avatar-initial" class="h-10 w-10 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 flex items-center justify-center text-white font-bold shadow-md text-base">A</div>
+                    <div class="hidden md:block text-left">
+                        <p id="admin-name-display" class="text-sm font-bold text-white">Admin Officer</p>
+                        <div class="flex items-center gap-2">
+                            <span id="admin-badge-display" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">GJ-POL</span>
+                            <span id="admin-role-display" class="text-xs text-slate-400 font-semibold">Traffic HQ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ========================================================================= -->
+        <!-- 3. VIEWS CONTAINER -->
+        <!-- ========================================================================= -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8">
+
+            <!-- VIEW 1: LIVE DASHBOARD -->
+            <div id="view-dashboard" class="content-view space-y-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white tracking-tight">System Analytics Overview</h1>
+                        <p class="text-xs text-slate-400 mt-1">Real-time highway surveillance & AI recognition monitoring</p>
+                    </div>
+                    <button onclick="fetchStats(); fetchDetections();" class="px-4 py-2 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl text-xs font-semibold flex items-center gap-2 transition w-fit">
+                        <i class="fa-solid fa-rotate text-xs"></i> Refresh Data
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Scanned</p>
+                            <h3 class="text-3xl font-extrabold text-white mt-1 font-mono" id="stat-scanned">0</h3>
+                            <p class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-mono"><i class="fa-solid fa-arrow-trend-up"></i> Live Feed Active</p>
+                        </div>
+                        <div class="h-12 w-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-xl"><i class="fa-solid fa-car"></i></div>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Alerts</p>
+                            <h3 class="text-3xl font-extrabold text-red-400 mt-1 font-mono" id="stat-alerts">0</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">Watchlist Tracking</p>
+                        </div>
+                        <div class="h-12 w-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cameras Online</p>
+                            <h3 class="text-3xl font-extrabold text-emerald-400 mt-1 font-mono" id="stat-cameras">1 / 1</h3>
+                            <p class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-mono"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Connected</p>
+                        </div>
+                        <div class="h-12 w-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl"><i class="fa-solid fa-video"></i></div>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-2xl p-6 border border-slate-800 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">AI Server Status</p>
+                            <h3 class="text-2xl font-bold text-emerald-400 mt-1 font-mono" id="stat-server">Optimal</h3>
+                            <p class="text-[11px] text-blue-400 mt-1 font-mono">Latency &lt; 15ms</p>
+                        </div>
+                        <div class="h-12 w-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-xl"><i class="fa-solid fa-server"></i></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-800 bg-slate-950/60 flex justify-between items-center">
+                        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2"><i class="fa-solid fa-list text-blue-400"></i> Recent Vehicle Logs</h3>
+                        <span class="text-xs font-mono text-slate-400 px-2.5 py-1 rounded bg-slate-800 border border-slate-700">Auto-Sync (2s)</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs font-mono">
+                            <thead>
+                                <tr class="bg-slate-950/80 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                                    <th class="px-6 py-4 font-semibold">Log ID</th>
+                                    <th class="px-6 py-4 font-semibold">Vehicle Type</th>
+                                    <th class="px-6 py-4 font-semibold">Number Plate</th>
+                                    <th class="px-6 py-4 font-semibold">Timestamp</th>
+                                    <th class="px-6 py-4 font-semibold text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detection-data" class="divide-y divide-slate-800/60 text-slate-300">
+                                <tr>
+                                    <td colspan="5" class="px-6 py-8 text-center text-slate-400 font-medium font-sans">
+                                        <i class="fa-solid fa-spinner fa-spin mr-2 text-blue-400"></i> Fetching live AI feed...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: CAMERA STREAM (80,000 CAMERAS DYNAMIC SURVEILLANCE GRID) -->
+            <div id="view-camera" class="content-view hidden h-full flex flex-col space-y-4">
+                
+                <!-- Camera Stream Top Controls Bar -->
+                <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                            <i class="fa-solid fa-video text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-white tracking-tight">Gujarat CCTV Network</h2>
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 80,000 FEEDS ONLINE
+                                </span>
+                            </div>
+                            <p id="cam-current-filter-desc" class="text-xs text-slate-400 font-medium">Viewing all 80,000 camera feeds across Gujarat State</p>
+                        </div>
+                    </div>
+
+                    <!-- Direct Camera Number Jump -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5">
+                            <span class="text-xs text-slate-400 font-mono mr-2">Cam #:</span>
+                            <input type="number" id="cam-direct-input" min="1" max="80000" placeholder="1 - 80000" 
+                                onkeydown="if(event.key==='Enter') jumpToSpecificCamera()"
+                                class="w-24 bg-transparent text-xs font-mono font-bold text-white placeholder-slate-500 focus:outline-none">
+                            <button onclick="jumpToSpecificCamera()" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition ml-1">
+                                Go
+                            </button>
+                        </div>
+
+                        <!-- Feeds per page selector -->
+                        <div class="flex items-center bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-300">
+                            <span class="mr-2 text-slate-400">Per page:</span>
+                            <select id="cam-per-page-select" onchange="changeCamPerPage(this.value)" class="bg-transparent font-mono font-bold text-blue-400 focus:outline-none cursor-pointer">
+                                <option value="8" class="bg-slate-900 text-slate-200">8</option>
+                                <option value="12" selected class="bg-slate-900 text-slate-200">12</option>
+                                <option value="24" class="bg-slate-900 text-slate-200">24</option>
+                                <option value="48" class="bg-slate-900 text-slate-200">48</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Official Government Sandbox Live Portal & RTSP Ingest Bar -->
+                <div class="bg-slate-900/95 rounded-2xl p-4 border border-blue-500/30 flex flex-col lg:flex-row items-center justify-between gap-4 shadow-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                            <i class="fa-solid fa-tower-broadcast text-lg animate-pulse"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Sentinel Gujarat Live Portal (/api/ingest)</h3>
+                                <span id="gov-gateway-badge" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">● RTSP over TCP</span>
+                            </div>
+                            <p class="text-[11px] text-slate-400">Official Gujarat Police Sandbox Live RTP/RTSP & WebRTC/HLS Ingestion Engine</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 w-full lg:w-auto flex-wrap sm:flex-nowrap">
+                        <input type="text" id="gov-host-input" placeholder="Enter Host (e.g. http://10.0.0.1 or portal IP)..." 
+                            class="flex-1 lg:w-80 px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-slate-200 outline-none focus:border-blue-500 placeholder-slate-500">
+                        <button onclick="connectGovernmentGateway()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-lg shadow-blue-600/20 font-mono">
+                            <i class="fa-solid fa-link"></i> Ingest Portal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- City Filter Pills -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                    <span class="text-slate-400 font-semibold shrink-0"><i class="fa-solid fa-city mr-1 text-blue-400"></i> City / Town Filter:</span>
+                    <button onclick="filterCamByCity('all', this)" class="cam-city-btn active-city-btn px-3 py-1.5 bg-blue-600 text-white rounded-xl font-bold shrink-0 transition shadow-sm">
+                        All Gujarat (80,000)
+                    </button>
+                    <button onclick="filterCamByCity('Ahmedabad', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Ahmedabad (10,000)
+                    </button>
+                    <button onclick="filterCamByCity('Surat', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Surat (10,000)
+                    </button>
+                    <button onclick="filterCamByCity('Dwarka', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Dwarka (6,000)
+                    </button>
+                    <button onclick="filterCamByCity('Mehsana', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Mehsana (6,000)
+                    </button>
+                    <button onclick="filterCamByCity('Patan', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Patan (5,000)
+                    </button>
+                    <button onclick="filterCamByCity('Palanpur', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Palanpur (5,000)
+                    </button>
+                    <button onclick="filterCamByCity('Bhuj & Madhapar', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Kutch - Bhuj & Madhapar (4,000)
+                    </button>
+                    <button onclick="filterCamByCity('Gandhidham', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Gandhidham (3,000)
+                    </button>
+                    <button onclick="filterCamByCity('Vadodara', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Vadodara (6,000)
+                    </button>
+                    <button onclick="filterCamByCity('Rajkot', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Rajkot (5,000)
+                    </button>
+                    <button onclick="filterCamByCity('Gandhinagar', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Gandhinagar (3,500)
+                    </button>
+                    <button onclick="filterCamByCity('Porbandar', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Porbandar (2,500)
+                    </button>
+                    <button onclick="filterCamByCity('Amreli', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Amreli (2,500)
+                    </button>
+                    <button onclick="filterCamByCity('Bhabhar', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Bhabhar (2,500)
+                    </button>
+                    <button onclick="filterCamByCity('Jamnagar', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Jamnagar (2,500)
+                    </button>
+                    <button onclick="filterCamByCity('Bhavnagar', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Bhavnagar (2,000)
+                    </button>
+                    <button onclick="filterCamByCity('Junagadh', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Junagadh (1,500)
+                    </button>
+                    <button onclick="filterCamByCity('Mata No Madh', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Mata No Madh (1,000)
+                    </button>
+                    <button onclick="filterCamByCity('Khambhalia', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Khambhalia (1,000)
+                    </button>
+                    <button onclick="filterCamByCity('Moti Marad', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Moti Marad (500)
+                    </button>
+                    <button onclick="filterCamByCity('Other Towns', this)" class="cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">
+                        Other Towns (500)
+                    </button>
+                </div>
+
+                <!-- Main Split Layout: Camera Grid (Left) + Search Panel (Right) -->
+                <div class="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
+                    
+                    <!-- Left: Camera Boxes Paginated Grid Container -->
+                    <div class="flex-1 bg-slate-900/70 rounded-2xl border border-slate-800 flex flex-col overflow-hidden shadow-xl">
+                        
+                        <!-- Top Grid Info Bar -->
+                        <div class="px-5 py-3 border-b border-slate-800 bg-slate-950/60 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span id="cam-showing-info" class="text-xs font-mono text-slate-300 font-semibold">Showing Cameras 1 - 12 of 80,000</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-[11px] text-emerald-400 font-mono flex items-center gap-1.5">
+                                    <i class="fa-solid fa-signal text-[10px]"></i> Live Sync 30 FPS
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 80,000 Dynamic Camera Grid (Populated dynamically) -->
+                        <div class="flex-1 overflow-y-auto p-5">
+                            <div id="camera-matrix-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                                <!-- Dynamic Camera Cards will render here -->
+                            </div>
+                        </div>
+
+                        <!-- Bottom Advanced Pagination Bar -->
+                        <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-4">
+                            <div class="text-xs font-mono text-slate-400" id="cam-page-indicator">
+                                Page 1 of 6,667
+                            </div>
+
+                            <!-- Page Navigation Buttons -->
+                            <div class="flex items-center gap-1.5" id="cam-pagination-controls">
+                                <!-- Populated dynamically -->
+                            </div>
+
+                            <!-- Page Jump Input -->
+                            <div class="flex items-center gap-1.5 text-xs">
+                                <span class="text-slate-400 font-mono">Page:</span>
+                                <input type="number" id="cam-page-jump-input" min="1" placeholder="1" 
+                                    onkeydown="if(event.key==='Enter') jumpToSpecificPage()"
+                                    class="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs font-mono text-center text-white focus:outline-none focus:border-blue-500">
+                                <button onclick="jumpToSpecificPage()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg font-bold border border-slate-700 transition">
+                                    Jump
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar: SEARCH CITIES TO CAMERA RESULTS -->
+                    <div class="w-full lg:w-[340px] bg-slate-900/80 rounded-2xl border border-slate-800 p-5 flex flex-col shadow-xl shrink-0">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass text-blue-400"></i> Search Cities to Cameras
+                            </h3>
+                            <span class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">80,000 DB</span>
+                        </div>
+                        
+                        <!-- Search Input -->
+                        <div class="relative mb-3">
+                            <input type="text" id="cam-sidebar-search" oninput="handleCamSidebarSearch()" placeholder="Search city, camera # (e.g. 79999)..." 
+                                class="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500 block pl-3 pr-10 py-2.5 outline-none transition placeholder-slate-500">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i class="fa-solid fa-search text-slate-500 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- Quick City Quick-Jump Tags -->
+                        <div class="flex flex-wrap gap-1.5 mb-3">
+                            <button onclick="searchCityTag('Ahmedabad')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Ahmedabad (10K)</button>
+                            <button onclick="searchCityTag('Surat')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Surat (10K)</button>
+                            <button onclick="searchCityTag('Dwarka')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Dwarka (6K)</button>
+                            <button onclick="searchCityTag('Mehsana')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Mehsana (6K)</button>
+                            <button onclick="searchCityTag('Bhuj')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Bhuj & Madhapar (4K)</button>
+                            <button onclick="searchCityTag('Gandhidham')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Gandhidham (3K)</button>
+                            <button onclick="searchCityTag('Porbandar')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Porbandar (2.5K)</button>
+                            <button onclick="searchCityTag('Amreli')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Amreli (2.5K)</button>
+                            <button onclick="searchCityTag('Mata No Madh')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Mata No Madh (1K)</button>
+                            <button onclick="searchCityTag('Moti Marad')" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-blue-600/30 text-slate-300 hover:text-blue-300 border border-slate-700/60 transition">Moti Marad (500)</button>
+                            <button onclick="searchCityTag('80000')" class="text-[10px] px-2 py-1 rounded bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 border border-blue-500/30 transition font-mono font-bold">Cam 80,000</button>
+                        </div>
+
+                        <!-- Sidebar Search Results List -->
+                        <div class="flex-1 overflow-y-auto space-y-2.5 pr-1" id="cam-search-results-list">
+                            <!-- Populated dynamically with matched camera cards -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CAMERA LIVE STREAM HD MODAL -->
+            <div id="cam-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
+                            <div>
+                                <h3 id="modal-cam-title" class="font-bold text-white text-base">Camera #00001 - Live HD Stream</h3>
+                                <p id="modal-cam-sub" class="text-xs text-slate-400 font-mono">Ahmedabad SG Highway Junction | 1080P 60FPS</p>
+                            </div>
+                        </div>
+                        <button onclick="closeCamModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body / Screen with Direct Live Video Stream -->
+                    <div class="p-0 flex-1 bg-black flex flex-col items-center justify-center relative overflow-hidden min-h-[420px]">
+                        <!-- Direct In-Browser Live Video Feed from AI Engine -->
+                        <img id="modal-live-video" src="http://127.0.0.1:8000/api/video_feed" alt="Live AI Camera Stream" 
+                            class="absolute inset-0 w-full h-full object-cover z-0" 
+                            onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1200&q=80';">
+
+                        <!-- Scanline & HUD Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/60 pointer-events-none z-10"></div>
+                        
+                        <div class="absolute top-4 left-4 flex items-center gap-2 text-xs font-mono text-emerald-400 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-emerald-500/30 z-20 shadow-lg">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>LIVE AI STREAM • <span id="modal-live-clock">--:--:--</span></span>
+                        </div>
+                        <div class="absolute top-4 right-4 flex items-center gap-2 z-20">
+                            <span class="text-xs font-mono text-emerald-400 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-emerald-500/30 font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-xs"></i> VAHAN / eGujCop: SYNCED
+                            </span>
+                        </div>
+
+                        <!-- Camera Target Overlay Info (Bottom Left) -->
+                        <div class="absolute bottom-16 left-4 z-20 bg-black/75 backdrop-blur-md p-3 rounded-xl border border-slate-700/80 max-w-sm">
+                            <h4 id="modal-cam-stream-name" class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-video text-blue-400"></i> Gujarat Police Live Surveillance Node
+                            </h4>
+                            <p class="text-[11px] text-slate-300 font-mono mt-0.5">YOLOv8 ByteTrack + EasyOCR ANPR Enabled</p>
+                        </div>
+
+                        <!-- Bottom Camera Controls -->
+                        <div class="absolute bottom-3 inset-x-4 flex justify-between items-center text-xs text-slate-400 bg-slate-950/90 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 z-20">
+                            <div class="flex items-center gap-2">
+                                <button onclick="alert('Snapshot saved to Gujarat Police Evidence Vault!')" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition font-semibold flex items-center gap-1">
+                                    <i class="fa-solid fa-camera"></i> Snapshot
+                                </button>
+                                <button onclick="alert('Recording saved to Highway Surveillance Archive!')" class="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg transition font-semibold flex items-center gap-1">
+                                    <i class="fa-solid fa-circle-dot"></i> Record
+                                </button>
+                            </div>
+                            <span class="font-mono text-[11px] text-slate-400">FPS: 30.0 • PROTOCOL: MJPEG / RTSP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: LIVE LOCATION (80,000 CAMERAS SURVEILLANCE HUBS) -->
+            <div id="view-location" class="content-view hidden space-y-6">
+                
+                <!-- Header & Status -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                            <i class="fa-solid fa-location-dot text-blue-400"></i> Live Surveillance Checkpoints & GPS Hubs
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Real-time GPS positions, traffic flow & police dispatch for 80,000 surveillance nodes across Gujarat</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs font-mono">
+                        <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2 font-bold">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> GPS TELEMETRY: LOCKED (99.9%)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Metrics Overview Banner -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800">
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Active Highway Hubs</p>
+                        <h4 class="text-2xl font-extrabold text-white mt-1 font-mono">21 Hubs</h4>
+                        <p class="text-[10px] text-emerald-400 mt-1 font-mono">● 100% Online</p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800">
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Linked Feeds</p>
+                        <h4 class="text-2xl font-extrabold text-blue-400 mt-1 font-mono">80,000</h4>
+                        <p class="text-[10px] text-slate-400 mt-1">Across 33 Districts</p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800">
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Avg Traffic Speed</p>
+                        <h4 class="text-2xl font-extrabold text-emerald-400 mt-1 font-mono">58 km/h</h4>
+                        <p class="text-[10px] text-slate-400 mt-1">Flow: Normal</p>
+                    </div>
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800">
+                        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">PCR Patrol Units</p>
+                        <h4 class="text-2xl font-extrabold text-amber-400 mt-1 font-mono">42 Units</h4>
+                        <p class="text-[10px] text-amber-400 mt-1 font-mono">On Highway Patrol</p>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Bar -->
+                <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-2 overflow-x-auto text-xs pb-1">
+                        <span class="text-slate-400 font-semibold shrink-0"><i class="fa-solid fa-filter text-blue-400 mr-1"></i> Region:</span>
+                        <button onclick="filterLocationZone('all', this)" class="loc-zone-btn active-loc-btn px-3 py-1.5 bg-blue-600 text-white rounded-xl font-bold shrink-0 transition">All Gujarat</button>
+                        <button onclick="filterLocationZone('north', this)" class="loc-zone-btn px-3 py-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">North Gujarat</button>
+                        <button onclick="filterLocationZone('kutch', this)" class="loc-zone-btn px-3 py-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">Kutch Zone</button>
+                        <button onclick="filterLocationZone('saurashtra', this)" class="loc-zone-btn px-3 py-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">Saurashtra Zone</button>
+                        <button onclick="filterLocationZone('central-south', this)" class="loc-zone-btn px-3 py-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition">Central & South Gujarat</button>
+                    </div>
+                    <div class="relative w-full sm:w-72">
+                        <input type="text" id="loc-search-input" oninput="searchLocationHubs()" placeholder="Search checkpoint, highway, district..." 
+                            class="w-full bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500 transition placeholder-slate-500">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
+                            <i class="fa-solid fa-search text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dynamic GPS Checkpoint Cards Grid -->
+                <div id="location-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- VIEW 4: GIS MAPPING -->
+            <div id="view-gis" class="content-view hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5"><i class="fa-solid fa-map-location-dot text-blue-400"></i> GIS Highway & Camera Mapping</h2>
+                    <p class="text-xs text-slate-400 mt-1">Interactive state map of surveillance cameras & patrol units</p>
+                </div>
+                <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800">
+                    <div id="gis-map-container" class="w-full h-[500px] rounded-xl overflow-hidden border border-slate-800"></div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: CAR DETAILS -->
+            <div id="view-details" class="content-view hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5"><i class="fa-solid fa-car-side text-blue-400"></i> Registered Vehicle Inventory & Logs</h2>
+                    <p class="text-xs text-slate-400 mt-1">All captured vehicles with classification and timestamp logs</p>
+                </div>
+                <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                    <div class="p-4 bg-slate-950 flex justify-between items-center border-b border-slate-800">
+                        <span class="font-bold text-xs text-slate-300 font-mono">DATABASE ENTRIES (traffic_data.db)</span>
+                        <button onclick="exportCSV()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold"><i class="fa-solid fa-download mr-1"></i> Export Data</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left font-mono text-xs">
+                            <thead class="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="px-6 py-3.5">ID</th><th class="px-6 py-3.5">Vehicle Type</th><th class="px-6 py-3.5">Plate Number</th><th class="px-6 py-3.5">Recorded Time</th><th class="px-6 py-3.5 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="car-details-tbody" class="divide-y divide-slate-800/60 text-slate-300">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 6: CAR SEARCH -->
+            <div id="view-search" class="content-view hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5"><i class="fa-solid fa-magnifying-glass text-blue-400"></i> Vehicle Search & Plate Lookup</h2>
+                    <p class="text-xs text-slate-400 mt-1">Search the database by number plate, vehicle category, or date</p>
+                </div>
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-800 space-y-6">
+                    <div class="flex flex-col sm:flex-row gap-3 max-w-xl">
+                        <input type="text" id="custom-search-input" placeholder="Enter plate (e.g. GJ-01, GJ-27, DL)..." class="flex-1 px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono text-slate-200 uppercase focus:outline-none focus:border-blue-500">
+                        <button onclick="executeCarSearch()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition"><i class="fa-solid fa-search mr-1"></i> Search</button>
+                    </div>
+                    <div id="search-results-box" class="space-y-3">
+                        <p class="text-xs text-slate-400">Enter a plate or keyword above to find matching records.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 7: RECORD VIDEO -->
+            <div id="view-record" class="content-view hidden h-full flex-col">
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4"><i class="fa-solid fa-compact-disc text-blue-500 mr-3"></i>Record Video (Camera Stream)</h2>
+                <div class="flex-1 bg-slate-800/50 rounded-2xl border border-slate-700 p-6 flex items-center justify-center shadow-inner">
+                    <div class="text-center">
+                        <i class="fa-solid fa-video text-6xl text-slate-600 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-slate-300">Live Recording Module</h3>
+                        <p class="text-slate-500 mt-2">CCTV stream ni recording tracking ahiya chalu thashe.</p>
+                        <button class="mt-6 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg shadow-red-500/30 transition flex items-center mx-auto">
+                            <span class="relative flex h-3 w-3 mr-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span></span>
+                            Start Recording
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 8: ALL ALERT CARS -->
+            <div id="view-alerts" class="content-view hidden h-full flex-col">
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-3 animate-pulse"></i>All Alert Cars History</h2>
+                <div class="flex-1 bg-slate-800/40 rounded-2xl border border-slate-700 overflow-hidden flex flex-col">
+                    <table class="w-full text-left text-sm font-mono">
+                        <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="px-6 py-4">Detection ID</th><th class="px-6 py-4">Vehicle Type</th><th class="px-6 py-4">Plate Number</th><th class="px-6 py-4">Timestamp</th><th class="px-6 py-4 text-center">Threat Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-only-tbody" class="divide-y divide-slate-800/50">
+                            <tr class="text-center text-slate-500"><td colspan="5" class="py-8">Fetching alerts data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW 9: STOLEN CARS DETAILS -->
+            <div id="view-stolen" class="content-view hidden h-full flex-col overflow-y-auto pr-2">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-mask text-slate-400 mr-3"></i>Stolen Cars Details (Registry)</h2>
+                    <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-lg shadow-emerald-500/20"><i class="fa-solid fa-plus mr-2"></i> Register New Stolen Car</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-slate-800/60 backdrop-blur-md border border-slate-700 rounded-2xl p-5 hover:border-red-500/50 transition group">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-3 py-1 bg-red-500/20 text-red-400 font-bold text-lg tracking-wider rounded border border-red-500/30">GJ-01-XX-9999</span>
+                            <span class="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded">FIR: 1234/2026</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Hyundai Creta (White)</h3>
+                        <div class="mt-4 pt-4 border-t border-slate-700/50 text-sm text-slate-400 space-y-1">
+                            <p><span class="text-slate-500">Owner:</span> Rahul Sharma</p><p><span class="text-slate-500">Reported:</span> 28 Aug 2026, Ahmedabad</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 10: BLACKLIST CARS LIVE LOCATION -->
+            <div id="view-blacklist-loc" class="content-view hidden h-full flex-col">
+                <h2 class="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-4"><i class="fa-solid fa-crosshairs text-rose-500 mr-3"></i>Blacklist Vehicle Tracker (Live Map)</h2>
+                <div class="flex-1 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden relative shadow-inner">
+                    <div id="blacklist-map" class="w-full h-full bg-slate-900 flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-satellite-dish text-6xl text-slate-700 mb-4 animate-pulse"></i>
+                        <p class="text-slate-400 font-medium">Connecting to GPS/GIS systems...</p>
+                        <p class="text-slate-600 text-sm mt-2">Only wanted/blacklisted vehicles will be plotted here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 11: REMOTE SHOP NVR (VPN GATEWAY / DIFFERENT NETWORK) -->
+            <div id="view-remote-nvr" class="content-view hidden space-y-6">
+                <!-- Header -->
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+                            <i class="fa-solid fa-network-wired text-cyan-400"></i> Remote Shop NVR Surveillance Gateway
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Direct RTSP over TCP feed connecting remote shop NVR via Secure VPN Tunnel to Sentinel AI Engine</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs font-mono">
+                        <span id="remote-nvr-conn-badge" class="px-3 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-2 font-bold shadow-lg">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> VPN ROUTED: ACTIVE
+                        </span>
+                        <span class="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 font-bold">
+                            TCP ENFORCED
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Remote NVR Grid: Stream View (Left) & Configuration / Telemetry (Right) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left (2 Cols): Live Remote Video Player with AI Overlay -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-slate-900/90 rounded-2xl border border-slate-800 p-4 shadow-xl">
+                            <div class="flex items-center justify-between mb-3 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-white font-mono" id="remote-cam-title">Shop NVR Feed • Channel 1</span>
+                                    <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">AI ANPR SYNC</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-slate-400 font-mono text-[11px]">
+                                    <span>PTS: <span id="remote-pts-val" class="text-emerald-400">--</span></span>
+                                    <span>FPS: <span class="text-blue-400">30.0</span></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Video Screen Container -->
+                            <div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                                <img id="remote-nvr-video-img" src="http://127.0.0.1:8000/api/remote_nvr/video_feed" alt="Remote NVR Stream" 
+                                    class="w-full h-full object-cover"
+                                    onerror="this.src='https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1200&q=80';">
+                                
+                                <!-- Scanlines & Top Left Telemetry Overlay -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50 pointer-events-none"></div>
+                                <div class="absolute top-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-lg border border-cyan-500/30 text-[11px] font-mono text-cyan-300">
+                                    <i class="fa-solid fa-shield-halved mr-1"></i> REMOTE SURVEILLANCE • ENCRYPTED
+                                </div>
+                            </div>
+
+                            <!-- Screen Controls -->
+                            <div class="flex items-center justify-between mt-3 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <button onclick="refreshRemoteNVRStream()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition font-semibold flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrows-rotate"></i> Refresh Feed
+                                    </button>
+                                    <button onclick="alert('Remote NVR Snapshot captured & stored to Evidence Vault!')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition font-semibold flex items-center gap-1.5 border border-slate-700">
+                                        <i class="fa-solid fa-camera"></i> Snapshot
+                                    </button>
+                                </div>
+                                <span class="text-[11px] font-mono text-slate-400">Protocol: RTSP / TCP over WireGuard VPN</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right (1 Col): Configuration & VPN Parameters Panel -->
+                    <div class="space-y-4">
+                        <div class="bg-slate-900/90 rounded-2xl border border-cyan-500/30 p-5 shadow-xl space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-sliders text-cyan-400"></i> NVR Configuration
+                                </h3>
+                                <span class="text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 px-2 py-0.5 rounded">Remote LAN / VPN</span>
+                            </div>
+
+                            <!-- Form Controls -->
+                            <div class="space-y-3 text-xs font-mono">
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Camera / NVR Brand Profile</label>
+                                    <select id="nvr-cfg-brand" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500 font-semibold text-cyan-300">
+                                        <option value="COREPRIX / ONVIF IP Cam" selected>⭐ COREPRIX 5MP (CPI-5M-B3SL-TW)</option>
+                                        <option value="Generic RTSP">Generic RTSP / ONVIF IP Camera</option>
+                                        <option value="Hikvision">Hikvision NVR / DVR</option>
+                                        <option value="CP Plus">CP Plus NVR / IP Cam</option>
+                                        <option value="Dahua">Dahua NVR / IP Cam</option>
+                                        <option value="Uniview">Uniview NVR</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-slate-400 block mb-1">NVR LAN IP / VPN Address</label>
+                                    <input type="text" id="nvr-cfg-host" value="192.168.1.100" placeholder="e.g. 192.168.1.100 or 10.8.0.2" 
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500">
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-slate-400 block mb-1">RTSP Port</label>
+                                        <input type="number" id="nvr-cfg-port" value="554" 
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-slate-400 block mb-1">Channel ID</label>
+                                        <input type="number" id="nvr-cfg-channel" value="1" min="1" max="64" 
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-slate-400 block mb-1">Username</label>
+                                        <input type="text" id="nvr-cfg-user" value="admin" 
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-slate-400 block mb-1">Password</label>
+                                        <input type="password" id="nvr-cfg-pass" placeholder="••••••••" 
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="text-slate-400 block mb-1">Direct Custom RTSP URL (Optional)</label>
+                                    <input type="text" id="nvr-cfg-custom-url" placeholder="rtsp://user:pass@host:554/live..." 
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-cyan-500 text-[11px]">
+                                </div>
+
+                                <button onclick="saveAndConnectRemoteNVR()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-bold transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 text-xs mt-2">
+                                    <i class="fa-solid fa-plug"></i> Apply & Connect Remote Feed
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Architecture & Security Checklist Card -->
+                        <div class="bg-slate-900/60 rounded-2xl border border-slate-800 p-4 text-xs font-mono space-y-2 text-slate-400">
+                            <h4 class="font-bold text-white text-xs border-b border-slate-800 pb-1.5 flex items-center gap-2">
+                                <i class="fa-solid fa-lock text-emerald-400"></i> VPN & Compliance Verification
+                            </h4>
+                            <p class="text-[11px]"><span class="text-emerald-400 font-bold">✓</span> RTSP over TCP forced</p>
+                            <p class="text-[11px]"><span class="text-emerald-400 font-bold">✓</span> PTS-only monotonic media clock</p>
+                            <p class="text-[11px]"><span class="text-emerald-400 font-bold">✓</span> 2s → 30s Exponential Reconnect</p>
+                            <p class="text-[11px]"><span class="text-emerald-400 font-bold">✓</span> Decoupled 30+ FPS YOLOv8 Worker</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. JAVASCRIPT LOGIC & API INTEGRATION -->
+    <!-- ========================================================================= -->
+    <script>
+        let cachedDetections = [];
+        let mapInstance = null;
+
+        // Page Load Init
+        document.addEventListener("DOMContentLoaded", () => {
+            let savedName = localStorage.getItem('adminName');
+            let savedBadge = localStorage.getItem('adminBadge');
+            let savedRole = localStorage.getItem('adminRole');
+
+            if (savedName) {
+                document.getElementById('admin-name-display').innerText = savedName;
+                document.getElementById('side-officer-name').innerText = savedName;
+                const initial = savedName.charAt(0).toUpperCase();
+                document.getElementById('admin-avatar-initial').innerText = initial;
+                document.getElementById('side-avatar').innerText = initial;
+
+                if (savedBadge) {
+                    document.getElementById('admin-badge-display').innerText = savedBadge;
+                    document.getElementById('side-officer-badge').innerText = savedBadge;
+                }
+                if (savedRole) {
+                    document.getElementById('admin-role-display').innerText = savedRole;
+                }
+            }
+
+            fetchStats();
+            fetchDetections();
+            fetchLiveAlerts();
+            fetchWatchlistRegistry();
+
+            setInterval(() => {
+                fetchStats();
+                fetchDetections();
+                fetchLiveAlerts();
+            }, 2500);
+        });
+
+        // 1. Navigation / View Switching (Handles all 10 fields)
+        function switchView(viewId, clickedBtn) {
+            document.querySelectorAll('.content-view').forEach(v => v.classList.add('hidden'));
+
+            const targetView = document.getElementById(viewId);
+            if (targetView) targetView.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.className = 'nav-item w-full flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-left';
+            });
+
+            if (clickedBtn) {
+                clickedBtn.className = 'nav-item active-nav w-full flex items-center px-4 py-3 bg-blue-600 text-white rounded-xl shadow-md transition font-semibold text-left';
+            }
+
+            if (viewId === 'view-gis') {
+                setTimeout(initGisMap, 100);
+            }
+            if (viewId === 'view-camera') {
+                renderCameraGrid();
+            }
+            if (viewId === 'view-location') {
+                renderLocationHubs();
+            }
+            if (viewId === 'view-remote-nvr') {
+                refreshRemoteNVRStream();
+                pollRemoteNVRTelemetry();
+            }
+        }
+
+        // 2. Leaflet GIS Map Init (All Gujarat Nodes: Kutch, Saurashtra, North & Central Gujarat)
+        function initGisMap() {
+            if (!mapInstance) {
+                mapInstance = L.map('gis-map-container').setView([23.2156, 70.8000], 7);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; Gujarat Cyber Vision GIS'
+                }).addTo(mapInstance);
+
+                const posts = [
+                    { name: "Ahmedabad Command Centre & SG Highway Post", lat: 23.0225, lng: 72.5714, feeds: "10,000 Feeds" },
+                    { name: "Surat Ring Road & Dumas Checkpost", lat: 21.1702, lng: 72.8311, feeds: "10,000 Feeds" },
+                    { name: "Dwarka Temple & Coastal Surveillance Node", lat: 22.2442, lng: 68.9685, feeds: "6,000 Feeds" },
+                    { name: "Mehsana Highway & Modhera Circle Node", lat: 23.5880, lng: 72.3693, feeds: "6,000 Feeds" },
+                    { name: "Patan Rani Ki Vav & Highway Checkpost", lat: 23.8493, lng: 72.1266, feeds: "5,000 Feeds" },
+                    { name: "Palanpur Aroma Circle & Ambaji Highway Node", lat: 24.1724, lng: 72.4346, feeds: "5,000 Feeds" },
+                    { name: "Kutch - Bhuj Jubilee & Madhapar Circle", lat: 23.2420, lng: 69.6669, feeds: "4,000 Feeds" },
+                    { name: "Gandhidham Kandla Port & Oslo Circle", lat: 23.0753, lng: 70.1337, feeds: "3,000 Feeds" },
+                    { name: "Porbandar Chowpati & Jubilee Bridge Post", lat: 21.6417, lng: 69.6293, feeds: "2,500 Feeds" },
+                    { name: "Amreli Liliya Road & Rajkot Highway Node", lat: 21.6032, lng: 71.2221, feeds: "2,500 Feeds" },
+                    { name: "Kutch - Mata No Madh Ashapura Temple Gate", lat: 23.5433, lng: 69.0064, feeds: "1,000 Feeds" },
+                    { name: "Vadodara Sayajigunj & Alkapuri Node", lat: 22.3072, lng: 73.1812, feeds: "6,000 Feeds" },
+                    { name: "Rajkot 150ft Ring Road & Kalawad Node", lat: 22.3039, lng: 70.8022, feeds: "5,000 Feeds" },
+                    { name: "Gandhinagar State HQ & CH-0 Post", lat: 23.2156, lng: 72.6369, feeds: "3,500 Feeds" },
+                    { name: "Bhabhar APMC & Suigam Border Node", lat: 24.1039, lng: 71.6033, feeds: "2,500 Feeds" },
+                    { name: "Jamnagar Digjam Circle & Port Post", lat: 22.4707, lng: 70.0577, feeds: "2,500 Feeds" },
+                    { name: "Bhavnagar Waghawadi & Ghogha Circle", lat: 21.7645, lng: 72.1519, feeds: "2,000 Feeds" },
+                    { name: "Junagadh Girnar Taleti & Kalwa Chowk", lat: 21.5222, lng: 70.4579, feeds: "1,500 Feeds" },
+                    { name: "Khambhalia Nagar Gate Checkpost", lat: 22.2045, lng: 69.6570, feeds: "1,000 Feeds" },
+                    { name: "Moti Marad Highway Checkpoint", lat: 21.6830, lng: 70.3680, feeds: "500 Feeds" },
+                    { name: "Gujarat Inter-District Highway Patrol", lat: 22.8000, lng: 71.5000, feeds: "500 Feeds" }
+                ];
+
+                posts.forEach(p => {
+                    L.marker([p.lat, p.lng]).addTo(mapInstance)
+                        .bindPopup(`<b>${p.name}</b><br><span style="color:#38bdf8;font-weight:bold">${p.feeds}</span><br><span style="color:#34d399">● Live AI ANPR Active</span>`);
+                });
+            }
+            mapInstance.invalidateSize();
+        }
+
+        // 3. Fetch Stats from Backend
+        async function fetchStats() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('stat-scanned').innerText = stats.total_scanned;
+                if (document.getElementById('stat-alerts')) {
+                    document.getElementById('stat-alerts').innerText = stats.active_alerts;
+                }
+            } catch (error) {
+                console.log("Stats API Offline / Waiting");
+            }
+        }
+
+        // 4. Fetch Detections from Backend
+        async function fetchDetections() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/detections');
+                const data = await response.json();
+                cachedDetections = data;
+
+                const tbody = document.getElementById('detection-data');
+                const detailsTbody = document.getElementById('car-details-tbody');
+                
+                if(tbody) tbody.innerHTML = ''; 
+                if (detailsTbody) detailsTbody.innerHTML = '';
+
+                if (data.length === 0) {
+                    if(tbody) tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 font-medium">No vehicles detected yet. Start AI Camera Stream.</td></tr>';
+                    if (detailsTbody) detailsTbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400 font-medium">No records.</td></tr>';
+                    return;
+                }
+
+                data.forEach(v => {
+                    let icon = 'fa-car text-blue-400';
+                    if(v.vehicle_type === 'motorcycle') icon = 'fa-motorcycle text-emerald-400';
+                    if(v.vehicle_type === 'truck' || v.vehicle_type === 'bus') icon = 'fa-truck text-amber-400';
+
+                    let plateBadge = v.plate_number ? 
+                        `<span class="px-2.5 py-1 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 font-bold">${v.plate_number}</span>` : 
+                        `<span class="px-2.5 py-1 rounded bg-slate-800 text-slate-500">UNKNOWN</span>`;
+
+                    let row = `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="px-6 py-4 font-semibold text-slate-400">#${v.id}</td>
+                        <td class="px-6 py-4 font-bold text-slate-200 capitalize"><i class="fa-solid ${icon} mr-2"></i>${v.vehicle_type}</td>
+                        <td class="px-6 py-4">${plateBadge}</td>
+                        <td class="px-6 py-4 text-slate-400 font-medium">${new Date(v.timestamp).toLocaleString()}</td>
+                        <td class="px-6 py-4 text-center"><span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded border border-emerald-500/20">Verified</span></td>
+                    </tr>`;
+
+                    if(tbody) tbody.innerHTML += row;
+                    if (detailsTbody) detailsTbody.innerHTML += row;
+                });
+            } catch (error) {
+                if(document.getElementById('detection-data')) {
+                    document.getElementById('detection-data').innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-red-400 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Backend Offline (Run uvicorn src.backend.main:app).</td></tr>';
+                }
+            }
+        }
+
+        // 4b. Fetch Live Alerts from Backend
+        async function fetchLiveAlerts() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/alerts/live');
+                const data = await response.json();
+                const alertsTbody = document.getElementById('alerts-only-tbody');
+                if (!alertsTbody) return;
+
+                if (data.alerts && data.alerts.length > 0) {
+                    let html = '';
+                    data.alerts.forEach(alt => {
+                        html += `
+                        <tr class="hover:bg-red-500/10 transition bg-red-950/20 border-l-4 border-red-500">
+                            <td class="px-6 py-4 font-semibold text-red-400 font-mono">${alt.id}</td>
+                            <td class="px-6 py-4 font-bold text-white">${alt.vehicle_type}</td>
+                            <td class="px-6 py-4"><span class="px-3 py-1 bg-red-600 text-white font-mono font-bold rounded text-xs tracking-wider animate-pulse">${alt.plate}</span></td>
+                            <td class="px-6 py-4 text-slate-300 font-mono text-xs">${alt.location}<br><span class="text-[10px] text-slate-500">${new Date(alt.timestamp).toLocaleTimeString()}</span></td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-2.5 py-1 bg-red-500/20 text-red-300 text-xs font-bold rounded border border-red-500/40">${alt.severity}</span>
+                                <p class="text-[10px] text-amber-400 mt-1 font-mono">${alt.fir_number}</p>
+                            </td>
+                        </tr>`;
+                    });
+                    alertsTbody.innerHTML = html;
+                } else {
+                    alertsTbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 font-medium">No active security alerts. All vehicle scans normal.</td></tr>';
+                }
+            } catch (err) {
+                console.log("Live alerts endpoint offline.");
+            }
+        }
+
+        // 4c. Fetch VAHAN & eGujCop Watchlist Registry
+        async function fetchWatchlistRegistry() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/watchlist');
+                const data = await response.json();
+                const container = document.getElementById('view-stolen');
+                if (!container || !data.records) return;
+
+                const grid = container.querySelector('.grid');
+                if (!grid) return;
+
+                let html = '';
+                data.records.forEach(rec => {
+                    html += `
+                    <div class="bg-slate-800/80 backdrop-blur-md border border-slate-700 hover:border-red-500/60 rounded-2xl p-5 transition group shadow-xl">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="px-3 py-1 bg-red-500/20 text-red-400 font-bold text-base tracking-wider rounded-lg border border-red-500/30 font-mono">${rec.plate}</span>
+                            <span class="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-800">${rec.fir_number}</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white group-hover:text-red-300 transition">${rec.vehicle_type}</h3>
+                        <p class="text-xs text-amber-400 font-semibold mt-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${rec.crime_category}</p>
+                        <div class="mt-4 pt-3 border-t border-slate-700/60 text-xs text-slate-400 space-y-1 font-mono">
+                            <p><span class="text-slate-500">Owner:</span> ${rec.owner}</p>
+                            <p><span class="text-slate-500">Police Station:</span> ${rec.police_station}</p>
+                            <p><span class="text-slate-500">DB Source:</span> <span class="text-blue-400 font-bold">${rec.database_source}</span></p>
+                        </div>
+                        <div class="mt-4 pt-2">
+                            <span class="text-[10px] px-2 py-1 bg-red-600/30 text-red-300 border border-red-500/40 rounded block text-center font-bold">
+                                ${rec.action_required}
+                            </span>
+                        </div>
+                    </div>`;
+                });
+                grid.innerHTML = html;
+            } catch (err) {
+                console.log("Watchlist API offline.");
+            }
+        }
+
+        // 5. Car Search Function
+        function executeCarSearch() {
+            const query = (document.getElementById('custom-search-input').value || '').trim().toLowerCase();
+            const resultsBox = document.getElementById('search-results-box');
+
+            if (!query) {
+                resultsBox.innerHTML = '<p class="text-xs text-amber-400">Please enter a search term.</p>';
+                return;
+            }
+
+            const matches = cachedDetections.filter(d => 
+                (d.plate_number && d.plate_number.toLowerCase().includes(query)) ||
+                (d.vehicle_type && d.vehicle_type.toLowerCase().includes(query)) ||
+                (d.id && d.id.toString().includes(query))
+            );
+
+            if (matches.length === 0) {
+                resultsBox.innerHTML = `<div class="p-4 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-400">No vehicles found matching "${query}".</div>`;
+                return;
+            }
+
+            let html = `<div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 font-mono text-xs">
+                <p class="font-bold text-emerald-400">Found ${matches.length} matching record(s):</p>`;
+            matches.forEach(m => {
+                html += `
+                <div class="p-3 bg-slate-900 rounded-lg flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-white">#${m.id} - ${m.vehicle_type.toUpperCase()}</span>
+                        <span class="ml-2 text-yellow-300 font-bold">${m.plate_number || 'UNKNOWN'}</span>
+                    </div>
+                    <span class="text-slate-400">${new Date(m.timestamp).toLocaleTimeString()}</span>
+                </div>`;
+            });
+            html += `</div>`;
+            resultsBox.innerHTML = html;
+        }
+
+        function searchVehicleGlobal() {
+            const val = document.getElementById('topbar-search-input').value;
+            document.getElementById('custom-search-input').value = val;
+            switchView('view-search', document.querySelectorAll('.nav-item')[5]);
+            executeCarSearch();
+        }
+
+        function exportCSV() {
+            let csv = "ID,Vehicle_Type,Plate_Number,Timestamp\n";
+            cachedDetections.forEach(row => {
+                csv += `${row.id},${row.vehicle_type},${row.plate_number || 'UNKNOWN'},${row.timestamp}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `Gujarat_Vehicle_Logs_${Date.now()}.csv`);
+            a.click();
+        }
+
+        // Logout
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // =========================================================================
+        // 80,000 CAMERAS SURVEILLANCE MATRIX ENGINE
+        // =========================================================================
+        const TOTAL_CAMERAS = 80000;
+        let camPerPage = 12;
+        let currentCamPage = 1;
+        let activeCityFilter = 'all';
+        let highlightedCamId = null;
+
+        // City camera partition ranges (Ahmedabad: 10,000, Surat: 10,000, Dwarka: 6,000, Mehsana: 6,000, Patan: 5,000, Palanpur: 5,000, Bhuj & Madhapar: 4,000, Gandhidham: 3,000, Vadodara: 6,000, Rajkot: 5,000, Gandhinagar: 3,500, Porbandar: 2,500, Amreli: 2,500, Bhabhar: 2,500, Jamnagar: 2,500, Bhavnagar: 2,000, Junagadh: 1,500, Mata No Madh: 1,000, Khambhalia: 1,000, Moti Marad: 500, Other Towns: 500 = Total 80,000)
+        const CITY_PARTITIONS = {
+            'Ahmedabad': { start: 1, end: 10000, total: 10000, junctions: ['SG Highway Junction', 'Ashram Road Circle', 'C.G. Road Node', 'Sabarmati Riverfront', 'Bopal Cross Road', 'Naroda Patiya Checkpost', 'Maninagar Char Rasta', 'SP Ring Road Toll', 'Iscon Flyover', 'Prahladnagar Cross', 'Vastrapur Lake Gate', 'Thaltej Cross Road', 'Shivranjani Junction', 'Sindhu Bhavan Road'] },
+            'Surat': { start: 10001, end: 20000, total: 10000, junctions: ['Ring Road Checkpost', 'Varachha Main Road', 'Athwa Lines Circle', 'Dumas Beach Node', 'Adajan Char Rasta', 'Katargam GIDC Gate', 'Textile Market Crossing', 'Majura Gate Flyover', 'Vesu Main Boulevard', 'Udhna Darwaja'] },
+            'Dwarka': { start: 20001, end: 26000, total: 6000, junctions: ['Dwarkadhish Temple Gate', 'Gomti Ghat Entry', 'Shivrajpur Beach Road', 'Bhadkeshwar Mahadev Point', 'Rukmini Temple Road', 'Okha Highway Checkpost', 'Beyt Dwarka Ferry Point', 'Nageshwar Jyotirling Road'] },
+            'Mehsana': { start: 26001, end: 32000, total: 6000, junctions: ['Modhera Cross Road', 'Radhanpur Road Char Rasta', 'Wide Angle Circle', 'Dairy Road Circle', 'Shobhasan Road', 'Mehsana Bypass Node', 'Nagrad Road Checkpost', 'Panchot Bypass'] },
+            'Patan': { start: 32001, end: 37000, total: 5000, junctions: ['Rani Ki Vav Road', 'Siddhpur Highway Gate', 'Chanasma Highway Circle', 'Bagwada Darwaja', 'University Road', 'Patan Cross Road', 'Hansapur Ring Road', 'Sampar Gate'] },
+            'Palanpur': { start: 37001, end: 42000, total: 5000, junctions: ['Ambaji Highway Circle', 'Aroma Circle Checkpost', 'Danta Highway Gate', 'Deesa Road Bypass', 'Gathaman Gate', 'Railway Colony Road', 'Abu Road Highway Node', 'Gobarvas Crossing'] },
+            'Bhuj & Madhapar': { start: 42001, end: 46000, total: 4000, junctions: ['Jubilee Ground Circle', 'Madhapar Yaksh Mandir Chowk', 'Bhujodi Highway Crossing', 'Hamirsar Lake Gate', 'Station Road', 'Mirzapar Highway Post', 'Airport Road Circle'] },
+            'Gandhidham': { start: 46001, end: 49000, total: 3000, junctions: ['Kandla Port Highway Node', 'Oslo Circle', 'Tagore Road Crossing', 'Railway Station Gate', 'Rotary Circle', 'Adipur Highway Checkpost'] },
+            'Vadodara': { start: 49001, end: 55000, total: 6000, junctions: ['Sayajigunj Tower', 'Alkapuri Arcade', 'Makarpura GIDC Point', 'VIP Road Circle', 'Gotri Hospital Chowk', 'Fatehgunj Circle', 'Waghodia Road Cross', 'Karelibaug Node', 'Akota Bridge Entry'] },
+            'Rajkot': { start: 55001, end: 60000, total: 5000, junctions: ['Kalawad Road Junction', 'Dr. Yagnik Road', '150ft Ring Road', 'Gondal Road Checkpost', 'Madhapar Circle', 'Trikon Baug Gate', 'Kotecha Chowk', 'University Road', 'Aji Dam Entry'] },
+            'Gandhinagar': { start: 60001, end: 63500, total: 3500, junctions: ['Sector 1 Checkpoint', 'Sector 11 Secretariat Gate', 'CH-0 Highway Post', 'CH-3 Circle', 'CH-5 Circle', 'Infocity Main Gate', 'GIFT City Express Road', 'Koba Circle Node', 'Randesan Cross Road'] },
+            'Bhabhar': { start: 63501, end: 66000, total: 2500, junctions: ['Radhanpur-Bhabhar Highway', 'Vav Road Char Rasta', 'APMC Market Yard Gate', 'Station Road', 'Suigam Border Highway Node', 'Mitha Checkpost', 'Sanva Road'] },
+            'Porbandar': { start: 66001, end: 68500, total: 2500, junctions: ['Chowpati Beach Road', 'Sudama Chowk', 'Jubilee Bridge Circle', 'Bhavsinhji Road', 'National Highway Checkpost', 'Ranavav Bypass'] },
+            'Amreli': { start: 68501, end: 71000, total: 2500, junctions: ['Liliya Road Circle', 'Rajkot Highway Checkpost', 'Chakkargadh Road', 'Tower Chowk', 'Gariadhar Road Crossing', 'Station Road'] },
+            'Jamnagar': { start: 71001, end: 73500, total: 2500, junctions: ['Digjam Circle', 'Khambhalia Gate', 'Patel Colony Node', 'Bedi Port Road Checkpost', 'Sumair Club Cross', 'Lakhota Lake Gate'] },
+            'Bhavnagar': { start: 73501, end: 75500, total: 2000, junctions: ['Waghawadi Road', 'Ghogha Circle', 'Rupani Chowk', 'Chitra GIDC Gate', 'Nilambag Palace Road', 'Kalyan Kendra'] },
+            'Junagadh': { start: 75501, end: 77000, total: 1500, junctions: ['Kalwa Chowk', 'Girnar Taleti Gate', 'Motibaug Circle', 'Zanzarda Road Bypass', 'Majewadi Gate', 'Bhavnath Foothills'] },
+            'Mata No Madh': { start: 77001, end: 78000, total: 1000, junctions: ['Ashapura Temple Main Gate', 'Lakhpat Highway Node', 'Bhuj-Koteshwar Road Checkpoint', 'Deshalpar Crossing', 'Temple Pilgrimage Parking'] },
+            'Khambhalia': { start: 78001, end: 79000, total: 1000, junctions: ['Nagar Gate', 'Jamnagar Highway Checkpost', 'Post Office Road', 'Station Road', 'Reliance Road Junction', 'Dwarka Bypass', 'Jodhpur Gate'] },
+            'Moti Marad': { start: 79001, end: 79500, total: 500, junctions: ['Dhoraji-Marad Highway Crossing', 'Marad Main Bazar', 'Gaushala Chowk', 'Bhadar River Node', 'Village Checkpoint'] },
+            'Other Towns': { start: 79501, end: 80000, total: 500, junctions: ['State Highway Surveillance Post', 'Toll Plaza Checkpoint', 'Rural Highway Node', 'Inter-District Patrol Point'] }
+        };
+
+        // Fast deterministic camera generator for any camera 1..80000
+        function getCameraInfo(camNum) {
+            let num = parseInt(camNum);
+            if (isNaN(num) || num < 1) num = 1;
+            if (num > TOTAL_CAMERAS) num = TOTAL_CAMERAS;
+
+            let cityName = 'Ahmedabad';
+            let cityData = CITY_PARTITIONS['Ahmedabad'];
+
+            for (const [cName, cRange] of Object.entries(CITY_PARTITIONS)) {
+                if (num >= cRange.start && num <= cRange.end) {
+                    cityName = cName;
+                    cityData = cRange;
+                    break;
+                }
+            }
+
+            const junctionIdx = (num - cityData.start) % cityData.junctions.length;
+            const junction = cityData.junctions[junctionIdx];
+            const poleNum = 1 + ((num - cityData.start) % 450);
+
+            let status = 'LIVE';
+            let statusBadgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+            if (num % 47 === 0) {
+                status = 'ALERT';
+                statusBadgeClass = 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse';
+            } else if (num % 19 === 0) {
+                status = 'AI SCAN';
+                statusBadgeClass = 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+            }
+
+            return {
+                id: num,
+                formattedId: 'CAM-' + String(num).padStart(5, '0'),
+                city: cityName,
+                location: `${cityName} - ${junction} (Pole #${poleNum})`,
+                shortLocation: `${cityName} - ${junction}`,
+                status: status,
+                statusBadgeClass: statusBadgeClass,
+                resolution: '1080P FHD',
+                fps: 30
+            };
+        }
+
+        // Get Current Active Scope (range of cameras based on city filter)
+        function getActiveCamScope() {
+            if (activeCityFilter === 'all' || !CITY_PARTITIONS[activeCityFilter]) {
+                return { start: 1, end: TOTAL_CAMERAS, total: TOTAL_CAMERAS, label: 'All Gujarat (80,000 Feeds)' };
+            }
+            const data = CITY_PARTITIONS[activeCityFilter];
+            return { start: data.start, end: data.end, total: data.total, label: `${activeCityFilter} (${data.total.toLocaleString()} Feeds)` };
+        }
+
+        // Render the Camera Grid
+        function renderCameraGrid() {
+            const gridContainer = document.getElementById('camera-matrix-grid');
+            if (!gridContainer) return;
+
+            const scope = getActiveCamScope();
+            const totalPages = Math.ceil(scope.total / camPerPage);
+
+            if (currentCamPage > totalPages) currentCamPage = totalPages;
+            if (currentCamPage < 1) currentCamPage = 1;
+
+            const startIndex = scope.start + (currentCamPage - 1) * camPerPage;
+            const endIndex = Math.min(startIndex + camPerPage - 1, scope.end);
+
+            // Update Info headers
+            const showingInfo = document.getElementById('cam-showing-info');
+            if (showingInfo) {
+                showingInfo.innerText = `Showing Cameras ${startIndex.toLocaleString()} - ${endIndex.toLocaleString()} of ${scope.total.toLocaleString()} Feeds (${scope.label})`;
+            }
+
+            const pageIndicator = document.getElementById('cam-page-indicator');
+            if (pageIndicator) {
+                pageIndicator.innerText = `Page ${currentCamPage.toLocaleString()} of ${totalPages.toLocaleString()}`;
+            }
+
+            // Generate HTML for camera cards
+            let html = '';
+            for (let i = startIndex; i <= endIndex; i++) {
+                const cam = getCameraInfo(i);
+                const isHighlighted = (highlightedCamId === cam.id);
+                const borderClass = isHighlighted 
+                    ? 'border-blue-500 ring-2 ring-blue-500 shadow-blue-500/30' 
+                    : 'border-slate-800 hover:border-slate-700';
+
+                html += `
+                <div id="cam-card-${cam.id}" class="bg-slate-950 rounded-xl overflow-hidden border ${borderClass} shadow-md flex flex-col group transition duration-200">
+                    
+                    <!-- Top Bar: Cam ID & Status -->
+                    <div class="px-3 py-2 bg-slate-900/90 border-b border-slate-800/80 flex items-center justify-between">
+                        <div class="flex items-center gap-1.5 overflow-hidden">
+                            <i class="fa-solid fa-video text-[11px] text-blue-400 shrink-0"></i>
+                            <span class="text-xs font-mono font-bold text-white truncate">Camera ${cam.id.toLocaleString()}</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold border ${cam.statusBadgeClass} shrink-0">
+                            ${cam.status === 'LIVE' ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block mr-1"></span>' : ''}
+                            ${cam.status}
+                        </span>
+                    </div>
+
+                    <!-- Screen Viewport: Realistic CCTV monitor with HUD -->
+                    <div onclick="openCamModal(${cam.id})" class="h-32 bg-slate-950 relative overflow-hidden flex flex-col items-center justify-center cursor-pointer group-hover:bg-slate-900/80 transition">
+                        <!-- Scanline & Background Glow -->
+                        <div class="absolute inset-0 bg-[radial-gradient(circle,_rgba(30,58,138,0.15)_0%,_rgba(2,6,23,0.95)_100%)] pointer-events-none"></div>
+                        <div class="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.4)_51%)] bg-[length:100%_4px] opacity-40 pointer-events-none"></div>
+
+                        <!-- Center Camera Icon / Play overlay -->
+                        <div class="w-12 h-12 rounded-full bg-slate-900/80 border border-slate-700/80 flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition shadow-lg z-10">
+                            <i class="fa-solid fa-play text-sm ml-0.5"></i>
+                        </div>
+
+                        <!-- HUD Elements -->
+                        <div class="absolute top-2 left-2 text-[9px] font-mono text-slate-400 bg-black/60 px-1.5 py-0.5 rounded border border-slate-800 flex items-center gap-1">
+                            <span class="w-1 h-1 rounded-full bg-red-500 animate-ping"></span> REC
+                        </div>
+                        <div class="absolute top-2 right-2 text-[9px] font-mono text-slate-400 bg-black/60 px-1.5 py-0.5 rounded border border-slate-800">
+                            ${cam.resolution}
+                        </div>
+
+                        <!-- Live Timestamp Simulation on viewport -->
+                        <div class="absolute bottom-2 left-2 text-[9px] font-mono text-emerald-400/90 bg-black/60 px-1.5 py-0.5 rounded">
+                            CH-${String((cam.id % 64) + 1).padStart(2, '0')} • <span class="cam-clock-tick">${new Date().toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Bar: Location & Quick Actions -->
+                    <div class="p-2.5 bg-slate-900/90 border-t border-slate-800/80 flex flex-col gap-1.5 text-xs">
+                        <p class="text-[11px] text-slate-300 font-medium truncate" title="${cam.location}">
+                            <i class="fa-solid fa-location-dot text-slate-500 mr-1"></i>${cam.shortLocation}
+                        </p>
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-800/50 text-[10px]">
+                            <span class="text-slate-500 font-mono">Node: GJ-${cam.city.substring(0, 3).toUpperCase()}</span>
+                            <button onclick="openCamModal(${cam.id})" class="px-2 py-0.5 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white rounded border border-blue-500/30 transition font-semibold">
+                                View Stream <i class="fa-solid fa-arrow-up-right-from-square ml-0.5 text-[8px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            gridContainer.innerHTML = html;
+            renderPaginationControls(totalPages);
+
+            if (highlightedCamId) {
+                const targetCard = document.getElementById(`cam-card-${highlightedCamId}`);
+                if (targetCard) {
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        // Render Smart Pagination Controls
+        function renderPaginationControls(totalPages) {
+            const container = document.getElementById('cam-pagination-controls');
+            if (!container) return;
+
+            let html = '';
+
+            // First Button
+            html += `
+            <button onclick="setCamPage(1)" ${currentCamPage === 1 ? 'disabled class="w-7 h-7 rounded bg-slate-900 text-slate-600 border border-slate-800 flex items-center justify-center text-xs cursor-not-allowed"' : 'class="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center justify-center text-xs transition"'} title="First Page">
+                <i class="fa-solid fa-angles-left text-[10px]"></i>
+            </button>`;
+
+            // Previous Button
+            html += `
+            <button onclick="setCamPage(${currentCamPage - 1})" ${currentCamPage === 1 ? 'disabled class="w-7 h-7 rounded bg-slate-900 text-slate-600 border border-slate-800 flex items-center justify-center text-xs cursor-not-allowed"' : 'class="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center justify-center text-xs transition"'} title="Previous Page">
+                <i class="fa-solid fa-chevron-left text-[10px]"></i>
+            </button>`;
+
+            // Numeric Page Range with Ellipsis
+            let pagesToShow = [];
+            if (totalPages <= 5) {
+                for (let p = 1; p <= totalPages; p++) pagesToShow.push(p);
+            } else {
+                let startPage = Math.max(1, currentCamPage - 1);
+                let endPage = Math.min(totalPages, currentCamPage + 1);
+
+                if (currentCamPage <= 2) {
+                    startPage = 1;
+                    endPage = 3;
+                } else if (currentCamPage >= totalPages - 1) {
+                    startPage = totalPages - 2;
+                    endPage = totalPages;
+                }
+
+                if (startPage > 1) {
+                    pagesToShow.push(1);
+                    if (startPage > 2) pagesToShow.push('...');
+                }
+
+                for (let p = startPage; p <= endPage; p++) {
+                    pagesToShow.push(p);
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) pagesToShow.push('...');
+                    pagesToShow.push(totalPages);
+                }
+            }
+
+            pagesToShow.forEach(p => {
+                if (p === '...') {
+                    html += `<span class="px-1 text-xs text-slate-600 font-mono select-none">...</span>`;
+                } else {
+                    const isActive = (p === currentCamPage);
+                    html += `
+                    <button onclick="setCamPage(${p})" class="w-7 h-7 rounded text-xs font-mono font-bold transition flex items-center justify-center ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800'}">
+                        ${p}
+                    </button>`;
+                }
+            });
+
+            // Next Button
+            html += `
+            <button onclick="setCamPage(${currentCamPage + 1})" ${currentCamPage === totalPages ? 'disabled class="w-7 h-7 rounded bg-slate-900 text-slate-600 border border-slate-800 flex items-center justify-center text-xs cursor-not-allowed"' : 'class="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center justify-center text-xs transition"'} title="Next Page">
+                <i class="fa-solid fa-chevron-right text-[10px]"></i>
+            </button>`;
+
+            // Last Button
+            html += `
+            <button onclick="setCamPage(${totalPages})" ${currentCamPage === totalPages ? 'disabled class="w-7 h-7 rounded bg-slate-900 text-slate-600 border border-slate-800 flex items-center justify-center text-xs cursor-not-allowed"' : 'class="w-7 h-7 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center justify-center text-xs transition"'} title="Last Page (${totalPages.toLocaleString()})">
+                <i class="fa-solid fa-angles-right text-[10px]"></i>
+            </button>`;
+
+            container.innerHTML = html;
+        }
+
+        // Set specific page
+        function setCamPage(page) {
+            const scope = getActiveCamScope();
+            const totalPages = Math.ceil(scope.total / camPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentCamPage = page;
+                renderCameraGrid();
+            }
+        }
+
+        // Filter by City
+        function filterCamByCity(city, btn) {
+            activeCityFilter = city;
+            currentCamPage = 1;
+            highlightedCamId = null;
+
+            document.querySelectorAll('.cam-city-btn').forEach(b => {
+                b.className = 'cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition';
+            });
+
+            if (btn) {
+                btn.className = 'cam-city-btn active-city-btn px-3 py-1.5 bg-blue-600 text-white rounded-xl font-bold shrink-0 transition shadow-sm';
+            }
+
+            const desc = document.getElementById('cam-current-filter-desc');
+            if (desc) {
+                if (city === 'all') {
+                    desc.innerText = 'Viewing all 80,000 camera feeds across Gujarat State';
+                } else {
+                    const data = CITY_PARTITIONS[city];
+                    desc.innerText = `Viewing ${city} CCTV Network (Cameras ${data.start.toLocaleString()} - ${data.end.toLocaleString()})`;
+                }
+            }
+
+            renderCameraGrid();
+        }
+
+        // Jump directly to a specific camera number (1 to 80,000)
+        function jumpToSpecificCamera() {
+            const input = document.getElementById('cam-direct-input');
+            let camNum = parseInt(input.value);
+
+            if (isNaN(camNum) || camNum < 1 || camNum > TOTAL_CAMERAS) {
+                alert(`Please enter a valid Camera number between 1 and ${TOTAL_CAMERAS.toLocaleString()}`);
+                return;
+            }
+
+            // Find which city scope contains this camera
+            let targetCity = 'all';
+            for (const [cName, cRange] of Object.entries(CITY_PARTITIONS)) {
+                if (camNum >= cRange.start && camNum <= cRange.end) {
+                    targetCity = cName;
+                    break;
+                }
+            }
+
+            // Switch to 'all' or that city scope
+            if (activeCityFilter !== 'all' && activeCityFilter !== targetCity) {
+                activeCityFilter = 'all';
+                document.querySelectorAll('.cam-city-btn').forEach((b, idx) => {
+                    b.className = (idx === 0) 
+                        ? 'cam-city-btn active-city-btn px-3 py-1.5 bg-blue-600 text-white rounded-xl font-bold shrink-0 transition shadow-sm'
+                        : 'cam-city-btn px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition';
+                });
+            }
+
+            const scope = getActiveCamScope();
+            const indexWithinScope = camNum - scope.start;
+            currentCamPage = Math.floor(indexWithinScope / camPerPage) + 1;
+            highlightedCamId = camNum;
+
+            renderCameraGrid();
+
+            // Clear input
+            input.value = '';
+        }
+
+        // Jump directly to a specific page
+        function jumpToSpecificPage() {
+            const input = document.getElementById('cam-page-jump-input');
+            let page = parseInt(input.value);
+            const scope = getActiveCamScope();
+            const totalPages = Math.ceil(scope.total / camPerPage);
+
+            if (isNaN(page) || page < 1 || page > totalPages) {
+                alert(`Please enter a valid page number between 1 and ${totalPages.toLocaleString()}`);
+                return;
+            }
+
+            currentCamPage = page;
+            renderCameraGrid();
+            input.value = '';
+        }
+
+        // Change feeds per page
+        function changeCamPerPage(val) {
+            camPerPage = parseInt(val) || 12;
+            currentCamPage = 1;
+            renderCameraGrid();
+        }
+
+        // Right Sidebar Search Functions
+        function handleCamSidebarSearch() {
+            const query = (document.getElementById('cam-sidebar-search').value || '').trim().toLowerCase();
+            renderSidebarSearchResults(query);
+        }
+
+        function searchCityTag(tagQuery) {
+            document.getElementById('cam-sidebar-search').value = tagQuery;
+            renderSidebarSearchResults(tagQuery.toLowerCase());
+        }
+
+        function renderSidebarSearchResults(query) {
+            const resultsContainer = document.getElementById('cam-search-results-list');
+            if (!resultsContainer) return;
+
+            let matches = [];
+
+            // If query is an exact or partial camera number
+            const numQuery = parseInt(query);
+            if (!isNaN(numQuery) && numQuery >= 1 && numQuery <= TOTAL_CAMERAS) {
+                matches.push(getCameraInfo(numQuery));
+                // Add nearby cameras as well for convenience
+                if (numQuery > 1) matches.push(getCameraInfo(numQuery - 1));
+                if (numQuery < TOTAL_CAMERAS) matches.push(getCameraInfo(numQuery + 1));
+            } else if (query) {
+                // Search across cities and samples
+                for (const [cName, cRange] of Object.entries(CITY_PARTITIONS)) {
+                    if (cName.toLowerCase().includes(query) || cRange.junctions.some(j => j.toLowerCase().includes(query))) {
+                        // Sample first, middle, last cameras of this city
+                        matches.push(getCameraInfo(cRange.start));
+                        matches.push(getCameraInfo(cRange.start + 1));
+                        matches.push(getCameraInfo(cRange.start + Math.floor(cRange.total / 2)));
+                        matches.push(getCameraInfo(cRange.end));
+                    }
+                }
+            } else {
+                // Default curated list across key cities & Kutch / Saurashtra / North Gujarat towns
+                matches = [
+                    getCameraInfo(1),       // Ahmedabad (10K)
+                    getCameraInfo(10001),   // Surat (10K)
+                    getCameraInfo(20001),   // Dwarka (6K)
+                    getCameraInfo(26001),   // Mehsana (6K)
+                    getCameraInfo(42001),   // Kutch - Bhuj & Madhapar (4K)
+                    getCameraInfo(46001),   // Gandhidham (3K)
+                    getCameraInfo(49001),   // Vadodara (6K)
+                    getCameraInfo(55001),   // Rajkot (5K)
+                    getCameraInfo(66001),   // Porbandar (2.5K)
+                    getCameraInfo(68501),   // Amreli (2.5K)
+                    getCameraInfo(77001),   // Mata No Madh (1K)
+                    getCameraInfo(79001),   // Moti Marad (500)
+                    getCameraInfo(80000)    // Final Highway Checkpoint
+                ];
+            }
+
+            // Remove duplicates
+            const uniqueMatches = [];
+            const seenIds = new Set();
+            for (const m of matches) {
+                if (!seenIds.has(m.id)) {
+                    seenIds.add(m.id);
+                    uniqueMatches.push(m);
+                }
+            }
+
+            if (uniqueMatches.length === 0) {
+                resultsContainer.innerHTML = `<div class="p-4 bg-slate-950 rounded-xl border border-slate-800 text-center text-xs text-slate-500">No cameras matching "${query}".</div>`;
+                return;
+            }
+
+            let html = '';
+            uniqueMatches.slice(0, 10).forEach(cam => {
+                html += `
+                <div class="p-3 bg-slate-950 hover:bg-slate-800/80 rounded-xl border border-slate-800/80 transition flex items-center justify-between group">
+                    <div class="overflow-hidden pr-2">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-mono font-bold text-white text-xs">Camera ${cam.id.toLocaleString()}</span>
+                            <span class="text-[9px] font-mono px-1.5 py-0.2 rounded border ${cam.statusBadgeClass}">${cam.status}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate mt-0.5">${cam.shortLocation}</p>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="focusCameraFromSidebar(${cam.id})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition shadow-sm">
+                            Open
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            resultsContainer.innerHTML = html;
+        }
+
+        // Focus and jump to camera from sidebar
+        function focusCameraFromSidebar(camId) {
+            document.getElementById('cam-direct-input').value = camId;
+            jumpToSpecificCamera();
+            openCamModal(camId);
+        }
+
+        // Connect to Government Sandbox Gateway (/api/ingest)
+        async function connectGovernmentGateway() {
+            const hostInput = document.getElementById('gov-host-input');
+            let host = hostInput ? hostInput.value.trim() : '';
+            if (!host) {
+                host = 'http://127.0.0.1:8000'; // Default sandbox host
+            }
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/gateway/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host: host })
+                });
+                const data = await res.json();
+                
+                const badge = document.getElementById('gov-gateway-badge');
+                if (data.status === 'connected' || data.total_cameras > 0) {
+                    if (badge) {
+                        badge.innerText = `● Ingest: ${data.total_cameras} Cameras Online`;
+                        badge.className = 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold';
+                    }
+                    alert(`✅ Successfully Connected to Official Gujarat Police Portal Gateway!\n\n• Ingest Catalogue: ${data.total_cameras} Cameras Loaded\n• Protocols Active: RTSP (over TCP), WebRTC (WHEP), HLS (.m3u8)\n• Gateway Host: ${data.host}`);
+                } else {
+                    if (badge) {
+                        badge.innerText = `● Offline / Fallback Sandbox`;
+                        badge.className = 'px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-mono font-bold';
+                    }
+                    alert(`⚠️ Gateway notice: ${data.message || 'Ready for connection when portal host is online.'}`);
+                }
+            } catch (err) {
+                alert('[-] Backend server offline. Please start FastAPI backend.');
+            }
+        }
+
+        // Connect Custom RTSP / Video Stream from Government / Hackathon Link
+        async function connectCustomRtspStream() {
+            const input = document.getElementById('rtsp-url-input');
+            const val = input ? input.value.trim() : '';
+            if (!val) {
+                alert('Please enter an RTSP link (e.g. rtsp://192.168.1.100:8554/stream/1) or video file path!');
+                return;
+            }
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/set_stream_source', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source: val })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    const vidImg = document.getElementById('modal-live-video');
+                    if (vidImg) {
+                        vidImg.src = `http://127.0.0.1:8000/api/video_feed?t=${Date.now()}`;
+                    }
+                    alert(`✅ Connected to Live Stream: ${val}\nRTSP over TCP is active. AI YOLOv8 vehicle tracking and ANPR plate scanning are actively analyzing this feed.`);
+                }
+            } catch (err) {
+                alert('[-] Backend offline. Please ensure FastAPI server is running.');
+            }
+        }
+
+        // =========================================================================
+        // SEPARATE REMOTE SHOP NVR (DIFFERENT NETWORK / VPN GATEWAY)
+        // =========================================================================
+        async function saveAndConnectRemoteNVR() {
+            const host = document.getElementById('nvr-cfg-host').value.trim();
+            const port = parseInt(document.getElementById('nvr-cfg-port').value) || 554;
+            const user = document.getElementById('nvr-cfg-user').value.trim();
+            const pass = document.getElementById('nvr-cfg-pass').value.trim();
+            const channel = parseInt(document.getElementById('nvr-cfg-channel').value) || 1;
+            const brand = document.getElementById('nvr-cfg-brand').value;
+            const customUrl = document.getElementById('nvr-cfg-custom-url').value.trim();
+
+            if (!host && !customUrl) {
+                alert('Please enter the Remote Shop NVR LAN IP or VPN Reachable Address (e.g. 192.168.1.100 or 10.8.0.2)!');
+                return;
+            }
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/remote_nvr/configure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        host: host,
+                        port: port,
+                        username: user,
+                        password: pass,
+                        channel: channel,
+                        brand: brand,
+                        custom_url: customUrl
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('remote-cam-title').innerText = `Shop NVR (${brand}) • Channel ${channel}`;
+                    refreshRemoteNVRStream();
+                    alert(`✅ Remote Shop NVR Configured!\n\n• Target Host: ${host}:${port}\n• Channel: CH-${channel}\n• Brand Profile: ${brand}\n• Transport: RTSP over TCP\n• Status: Initializing connection over VPN tunnel.`);
+                }
+            } catch (err) {
+                alert('[-] Backend offline. Please ensure FastAPI server is running.');
+            }
+        }
+
+        function refreshRemoteNVRStream() {
+            const img = document.getElementById('remote-nvr-video-img');
+            if (img) {
+                img.src = `http://127.0.0.1:8000/api/remote_nvr/video_feed?t=${Date.now()}`;
+            }
+        }
+
+        async function pollRemoteNVRTelemetry() {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/remote_nvr/status');
+                const data = await res.json();
+                const badge = document.getElementById('remote-nvr-conn-badge');
+                const ptsEl = document.getElementById('remote-pts-val');
+
+                if (ptsEl && data.pts_ms) {
+                    ptsEl.innerText = `${data.pts_ms.toFixed(1)}ms`;
+                }
+
+                if (badge) {
+                    if (data.connected) {
+                        badge.className = 'px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-2 font-bold shadow-lg';
+                        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> VPN ROUTED: CONNECTED (30 FPS)';
+                    } else {
+                        badge.className = 'px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-2 font-bold shadow-lg';
+                        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> RECONNECTING (${data.backoff_seconds}s)`;
+                    }
+                }
+            } catch (err) {}
+        }
+
+        // Poll Remote NVR status periodically
+        setInterval(pollRemoteNVRTelemetry, 3000);
+
+        // Modal View Functions
+        function openCamModal(camId) {
+            const cam = getCameraInfo(camId);
+            const modal = document.getElementById('cam-modal');
+            if (!modal) return;
+
+            document.getElementById('modal-cam-title').innerText = `Camera #${cam.id.toLocaleString()} (${cam.formattedId})`;
+            document.getElementById('modal-cam-sub').innerText = `${cam.location} | ${cam.resolution} 30FPS`;
+            document.getElementById('modal-cam-stream-name').innerText = `${cam.city} Police Surveillance Node #${cam.id} (${cam.junction})`;
+            document.getElementById('modal-live-clock').innerText = new Date().toLocaleTimeString();
+
+            // Connect live highway CCTV road feed for this specific camera node
+            const videoImg = document.getElementById('modal-live-video');
+            if (videoImg) {
+                videoImg.src = `http://127.0.0.1:8000/api/video_feed?cam_id=${cam.id}&city=${encodeURIComponent(cam.city)}&junction=${encodeURIComponent(cam.junction)}&t=${Date.now()}`;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeCamModal() {
+            const modal = document.getElementById('cam-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                const videoImg = document.getElementById('modal-live-video');
+                if (videoImg) videoImg.src = ''; // Cleanly stop stream
+            }
+        }
+
+        // Close modal on Escape
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCamModal();
+        });
+
+        // =========================================================================
+        // LIVE LOCATION HUBS & GPS SURVEILLANCE MATRIX ENGINE
+        // =========================================================================
+        const LOCATION_HUBS = [
+            { id: 1, name: "Ahmedabad Command Centre & SG Highway Hub", city: "Ahmedabad", zone: "central-south", highway: "SG Highway Corridor (NH-147)", lat: 23.0225, lng: 72.5714, feeds: 10000, camStartId: 1, speed: "64 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-01-POL-04 (0.8 km)", coverage: "Iscon, Prahladnagar, Riverfront, Bopal & SBR" },
+            { id: 2, name: "Surat Ring Road & Dumas Coastal Checkpost", city: "Surat", zone: "central-south", highway: "Surat Ring Road & NH-48", lat: 21.1702, lng: 72.8311, feeds: 10000, camStartId: 10001, speed: "52 km/h", traffic: "Moderate Flow", pcr: "PCR GJ-05-POL-11 (1.1 km)", coverage: "Varachha, Athwa Lines, Dumas Beach & Textile Hub" },
+            { id: 3, name: "Dwarka Temple & Coastal Surveillance Hub", city: "Dwarka", zone: "saurashtra", highway: "State Highway 6 & Coastal Belt", lat: 22.2442, lng: 68.9685, feeds: 6000, camStartId: 20001, speed: "45 km/h", traffic: "Pilgrim Flow", pcr: "PCR GJ-37-POL-02 (0.4 km)", coverage: "Dwarkadhish Gate, Gomti Ghat, Shivrajpur & Okha" },
+            { id: 4, name: "Mehsana Highway & Modhera Circle Node", city: "Mehsana", zone: "north", highway: "Mehsana-Ahmedabad State Highway 41", lat: 23.5880, lng: 72.3693, feeds: 6000, camStartId: 26001, speed: "68 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-02-POL-06 (1.4 km)", coverage: "Modhera Cross, Wide Angle, Dairy Rd & Bypass" },
+            { id: 5, name: "Patan Rani Ki Vav & Siddhpur Checkpost", city: "Patan", zone: "north", highway: "State Highway 7 & Chanasma Road", lat: 23.8493, lng: 72.1266, feeds: 5000, camStartId: 32001, speed: "55 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-24-POL-01 (0.9 km)", coverage: "Rani Ki Vav, Siddhpur Gate & Hansapur Ring Road" },
+            { id: 6, name: "Palanpur Aroma Circle & Ambaji Highway Post", city: "Palanpur", zone: "north", highway: "NH-27 & Ambaji Corridor", lat: 24.1724, lng: 72.4346, feeds: 5000, camStartId: 37001, speed: "60 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-08-POL-08 (1.3 km)", coverage: "Aroma Circle, Deesa Road Bypass & Danta Highway" },
+            { id: 7, name: "Kutch - Bhuj Jubilee & Madhapar Circle", city: "Bhuj & Madhapar", zone: "kutch", highway: "State Highway 46 & Madhapar Road", lat: 23.2420, lng: 69.6669, feeds: 4000, camStartId: 42001, speed: "50 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-12-POL-05 (0.7 km)", coverage: "Jubilee Ground, Madhapar Yaksh Mandir & Bhujodi" },
+            { id: 8, name: "Gandhidham Kandla Port & Oslo Circle Node", city: "Gandhidham", zone: "kutch", highway: "NH-41 & Kandla Port Expressway", lat: 23.0753, lng: 70.1337, feeds: 3000, camStartId: 46001, speed: "58 km/h", traffic: "Heavy Freight Flow", pcr: "PCR GJ-12-POL-09 (1.6 km)", coverage: "Kandla Marine Zone, Oslo Circle & Rotary Cross" },
+            { id: 9, name: "Vadodara Sayajigunj & Alkapuri Command Node", city: "Vadodara", zone: "central-south", highway: "NH-48 & Sayajigunj Tower Road", lat: 22.3072, lng: 73.1812, feeds: 6000, camStartId: 49001, speed: "54 km/h", traffic: "Moderate Flow", pcr: "PCR GJ-06-POL-03 (0.5 km)", coverage: "Sayajigunj, Alkapuri, Makarpura GIDC & VIP Road" },
+            { id: 10, name: "Rajkot 150ft Ring Road & Kalawad Post", city: "Rajkot", zone: "saurashtra", highway: "150ft Ring Road & NH-27", lat: 22.3039, lng: 70.8022, feeds: 5000, camStartId: 55001, speed: "61 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-03-POL-07 (1.0 km)", coverage: "Kalawad Road, Yagnik Rd, Madhapar & Aji Dam" },
+            { id: 11, name: "Gandhinagar State HQ & CH-0 Sentinel Post", city: "Gandhinagar", zone: "central-south", highway: "CH Road & GIFT City Expressway", lat: 23.2156, lng: 72.6369, feeds: 3500, camStartId: 60001, speed: "65 km/h", traffic: "High Security", pcr: "PCR GJ-18-POL-01 (0.3 km)", coverage: "CH-0, CH-3, Secretariat Gate, Infocity & GIFT City" },
+            { id: 12, name: "Bhabhar APMC & Suigam Border Highway Node", city: "Bhabhar", zone: "north", highway: "Radhanpur-Bhabhar Highway & Border Post", lat: 24.1039, lng: 71.6033, feeds: 2500, camStartId: 63501, speed: "72 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-08-POL-14 (1.8 km)", coverage: "APMC Market Yard, Vav Road & Mitha Checkpost" },
+            { id: 13, name: "Porbandar Chowpati & Jubilee Bridge Post", city: "Porbandar", zone: "saurashtra", highway: "NH-51 Coastal Corridor", lat: 21.6417, lng: 69.6293, feeds: 2500, camStartId: 66001, speed: "48 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-25-POL-02 (0.6 km)", coverage: "Chowpati Beach, Sudama Chowk & Ranavav Bypass" },
+            { id: 14, name: "Amreli Liliya Road & Rajkot Highway Node", city: "Amreli", zone: "saurashtra", highway: "State Highway 33 & Liliya Road", lat: 21.6032, lng: 71.2221, feeds: 2500, camStartId: 68501, speed: "56 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-14-POL-04 (1.2 km)", coverage: "Liliya Road Circle, Tower Chowk & Chakkargadh" },
+            { id: 15, name: "Jamnagar Digjam Circle & Bedi Port Node", city: "Jamnagar", zone: "saurashtra", highway: "Khambhalia Highway & Bedi Port Road", lat: 22.4707, lng: 70.0577, feeds: 2500, camStartId: 71001, speed: "53 km/h", traffic: "Port Traffic", pcr: "PCR GJ-10-POL-03 (0.9 km)", coverage: "Digjam Circle, Patel Colony & Lakhota Lake Gate" },
+            { id: 16, name: "Bhavnagar Waghawadi & Ghogha Circle Node", city: "Bhavnagar", zone: "saurashtra", highway: "State Highway 36 & Ghogha Belt", lat: 21.7645, lng: 72.1519, feeds: 2000, camStartId: 73501, speed: "51 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-04-POL-05 (0.8 km)", coverage: "Waghawadi Road, Ghogha Circle & Chitra GIDC" },
+            { id: 17, name: "Junagadh Girnar Taleti & Kalwa Chowk", city: "Junagadh", zone: "saurashtra", highway: "State Highway 31 & Zanzarda Bypass", lat: 21.5222, lng: 70.4579, feeds: 1500, camStartId: 75501, speed: "46 km/h", traffic: "Tourist/Pilgrim", pcr: "PCR GJ-11-POL-02 (0.5 km)", coverage: "Kalwa Chowk, Girnar Taleti & Motibaug Circle" },
+            { id: 18, name: "Kutch - Mata No Madh Ashapura Temple Node", city: "Mata No Madh", zone: "kutch", highway: "Bhuj-Lakhpat State Highway", lat: 23.5433, lng: 69.0064, feeds: 1000, camStartId: 77001, speed: "59 km/h", traffic: "Pilgrim Flow", pcr: "PCR GJ-12-POL-15 (1.5 km)", coverage: "Ashapura Temple Gate, Koteshwar Road & Deshalpar" },
+            { id: 19, name: "Khambhalia Nagar Gate & Reliance Road Post", city: "Khambhalia", zone: "saurashtra", highway: "Jamnagar-Dwarka National Highway", lat: 22.2045, lng: 69.6570, feeds: 1000, camStartId: 78001, speed: "63 km/h", traffic: "Smooth Flow", pcr: "PCR GJ-37-POL-04 (1.0 km)", coverage: "Nagar Gate, Station Road & Reliance Highway Node" },
+            { id: 20, name: "Moti Marad Highway Surveillance Checkpoint", city: "Moti Marad", zone: "saurashtra", highway: "Dhoraji-Marad Highway Crossing", lat: 21.6830, lng: 70.3680, feeds: 500, camStartId: 79001, speed: "42 km/h", traffic: "Local Rural Flow", pcr: "PCR GJ-03-POL-22 (0.4 km)", coverage: "Marad Main Bazar, Gaushala Chowk & Bhadar River" },
+            { id: 21, name: "Gujarat State Inter-District Patrol & Toll Post", city: "Other Towns", zone: "central-south", highway: "National Highway Patrol Matrix", lat: 22.8000, lng: 71.5000, feeds: 500, camStartId: 79501, speed: "76 km/h", traffic: "Inter-State Transit", pcr: "PCR GJ-POL-HIGHWAY-01", coverage: "State Highway Surveillance Posts & Toll Plazas" }
+        ];
+
+        let activeLocationZone = 'all';
+
+        // Render Location Hubs Cards
+        function renderLocationHubs(filterZone = activeLocationZone, query = '') {
+            const grid = document.getElementById('location-cards-grid');
+            if (!grid) return;
+
+            let filtered = LOCATION_HUBS;
+            if (filterZone && filterZone !== 'all') {
+                filtered = filtered.filter(h => h.zone === filterZone);
+            }
+            if (query && query.trim() !== '') {
+                const q = query.toLowerCase().trim();
+                filtered = filtered.filter(h => 
+                    h.name.toLowerCase().includes(q) ||
+                    h.city.toLowerCase().includes(q) ||
+                    h.highway.toLowerCase().includes(q) ||
+                    h.coverage.toLowerCase().includes(q)
+                );
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full p-8 text-center bg-slate-900/60 rounded-2xl border border-slate-800 text-slate-400">
+                    <i class="fa-solid fa-location-crosshairs text-3xl text-slate-600 mb-2"></i>
+                    <p class="text-sm font-semibold">No surveillance checkpoints match "${query}".</p>
+                </div>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(hub => {
+                html += `
+                <div class="bg-slate-900/90 hover:bg-slate-900 rounded-2xl p-5 border border-slate-800 hover:border-blue-500/40 transition duration-300 shadow-xl flex flex-col justify-between group">
+                    <div>
+                        <!-- Header & Live Badge -->
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <div>
+                                <span class="text-[10px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-bold uppercase">${hub.city}</span>
+                                <h3 class="font-bold text-white text-sm mt-1 group-hover:text-blue-300 transition">${hub.name}</h3>
+                            </div>
+                            <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[10px] font-mono font-bold shrink-0 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE
+                            </span>
+                        </div>
+
+                        <!-- Highway / Corridor -->
+                        <p class="text-xs text-slate-300 font-medium mb-3 flex items-center gap-1.5">
+                            <i class="fa-solid fa-road text-slate-500 text-[11px]"></i> ${hub.highway}
+                        </p>
+
+                        <!-- Telemetry Grid -->
+                        <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 space-y-1.5 text-xs mb-3 font-mono">
+                            <div class="flex justify-between text-slate-400 text-[11px]">
+                                <span><i class="fa-solid fa-satellite-dish mr-1 text-slate-500"></i> GPS Telemetry:</span>
+                                <span class="text-slate-200">${hub.lat.toFixed(4)}°N, ${hub.lng.toFixed(4)}°E</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400 text-[11px]">
+                                <span><i class="fa-solid fa-video mr-1 text-blue-400"></i> Linked Feeds:</span>
+                                <span class="text-blue-300 font-bold">${hub.feeds.toLocaleString()} Cameras (CAM ${hub.camStartId.toLocaleString()})</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400 text-[11px]">
+                                <span><i class="fa-solid fa-gauge-high mr-1 text-emerald-400"></i> Traffic / Speed:</span>
+                                <span class="text-emerald-400">${hub.speed} • ${hub.traffic}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400 text-[11px]">
+                                <span><i class="fa-solid fa-shield-halved mr-1 text-amber-400"></i> Police Unit:</span>
+                                <span class="text-amber-300">${hub.pcr}</span>
+                            </div>
+                        </div>
+
+                        <p class="text-[11px] text-slate-400 leading-relaxed">
+                            <span class="text-slate-500 font-semibold">Coverage:</span> ${hub.coverage}
+                        </p>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2">
+                        <button onclick="openLocationCamera(${hub.camStartId})" class="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md">
+                            <i class="fa-solid fa-video text-xs"></i> Open Feed (#${hub.camStartId.toLocaleString()})
+                        </button>
+                        <button onclick="pinLocationOnGis(${hub.lat}, ${hub.lng}, '${hub.name}')" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-1.5" title="Pin on GIS Map">
+                            <i class="fa-solid fa-map-pin text-blue-400"></i> GIS Map
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        // Filter Zone Tabs
+        function filterLocationZone(zone, btn) {
+            activeLocationZone = zone;
+            document.querySelectorAll('.loc-zone-btn').forEach(b => {
+                b.className = 'loc-zone-btn px-3 py-1.5 bg-slate-950 text-slate-300 hover:text-white border border-slate-800 rounded-xl font-medium shrink-0 transition';
+            });
+            if (btn) {
+                btn.className = 'loc-zone-btn active-loc-btn px-3 py-1.5 bg-blue-600 text-white rounded-xl font-bold shrink-0 transition';
+            }
+            renderLocationHubs(zone, document.getElementById('loc-search-input') ? document.getElementById('loc-search-input').value : '');
+        }
+
+        // Search in location hubs
+        function searchLocationHubs() {
+            const input = document.getElementById('loc-search-input');
+            const q = input ? input.value : '';
+            renderLocationHubs(activeLocationZone, q);
+        }
+
+        // Open camera directly from location card
+        function openLocationCamera(camId) {
+            switchView('view-camera', document.querySelectorAll('.nav-item')[1]);
+            document.getElementById('cam-direct-input').value = camId;
+            jumpToSpecificCamera();
+            openCamModal(camId);
+        }
+
+        // Pin location on GIS map
+        function pinLocationOnGis(lat, lng, name) {
+            switchView('view-gis', document.querySelectorAll('.nav-item')[3]);
+            setTimeout(() => {
+                if (mapInstance) {
+                    mapInstance.setView([lat, lng], 12);
+                    L.popup()
+                        .setLatLng([lat, lng])
+                        .setContent(`<b>${name}</b><br><span style="color:#38bdf8;font-weight:bold">GPS Telemetry Locked</span><br><span style="color:#34d399">● Live Surveillance Active</span>`)
+                        .openOn(mapInstance);
+                }
+            }, 200);
+        }
+
+        // Initialize Camera Grid & Location Hubs on DOM Ready
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCameraGrid();
+            renderSidebarSearchResults('');
+            renderLocationHubs('all', '');
+
+            // Ticking clocks inside camera thumbnails
+            setInterval(() => {
+                const clocks = document.querySelectorAll('.cam-clock-tick');
+                const now = new Date().toLocaleTimeString();
+                clocks.forEach(c => c.innerText = now);
+                const modalClock = document.getElementById('modal-live-clock');
+                if (modalClock) modalClock.innerText = now;
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
