@@ -27,6 +27,9 @@ export const surveillanceService = {
   getWatchlist: () => api.get('/api/watchlist'),
   
   // Stream control
+  startCamera: (source = "0") => api.post(`/api/start_camera?source=${encodeURIComponent(source)}`),
+  stopCamera: () => api.post('/api/stop_camera'),
+  getCameraState: () => api.get('/api/camera_state'),
   setStreamSource: (source) => api.post('/api/set_stream_source', { source }),
   getIngestCatalogue: () => api.get('/api/ingest'),
   connectGateway: (host) => api.post('/api/gateway/connect', { host }),

@@ -63,7 +63,14 @@ def home():
     }
 
 from fastapi.responses import StreamingResponse
-from src.ingestion.web_streamer import generate_video_stream, set_stream_source, get_current_source
+from src.ingestion.web_streamer import (
+    generate_video_stream, 
+    set_stream_source, 
+    get_current_source,
+    start_camera,
+    stop_camera,
+    get_camera_state
+)
 
 @app.get("/api/video_feed")
 def get_live_video_stream(cam_id: int = 1, city: str = "Ahmedabad", junction: str = "SG Highway Junction"):
@@ -72,6 +79,21 @@ def get_live_video_stream(cam_id: int = 1, city: str = "Ahmedabad", junction: st
         generate_video_stream(cam_id=cam_id, city=city, junction=junction),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+@app.post("/api/start_camera")
+def activate_camera(source: str = "0"):
+    """Turn on camera hardware and start streaming."""
+    return start_camera(source)
+
+@app.post("/api/stop_camera")
+def deactivate_camera():
+    """Turn off camera hardware and turn off hardware LED."""
+    return stop_camera()
+
+@app.get("/api/camera_state")
+def check_camera_state():
+    """Check if camera hardware is active or in standby."""
+    return get_camera_state()
 
 class StreamSourceRequest(BaseModel):
     source: str = Field(..., description="RTSP URL, Video File Path, or Webcam ID (e.g. 0, rtsp://...)")
