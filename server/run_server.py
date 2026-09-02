@@ -2,6 +2,9 @@ import os
 import sys
 import uvicorn
 
+# Suppress Ultralytics permission warning on cloud environments like Render
+os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/Ultralytics")
+
 # Ensure both server/ and project root are in sys.path
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
