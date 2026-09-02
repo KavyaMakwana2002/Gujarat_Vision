@@ -16,7 +16,7 @@ import StolenRegistryView from './views/StolenRegistryView';
 import BlacklistTrackerView from './views/BlacklistTrackerView';
 import RemoteNvrView from './views/RemoteNvrView';
 
-import { surveillanceService } from './services/api';
+import { surveillanceService, API_BASE_URL } from './services/api';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -24,7 +24,7 @@ export default function App() {
   const [detections, setDetections] = useState([]);
   const [liveAlerts, setLiveAlerts] = useState([]);
   const [activeRedAlert, setActiveRedAlert] = useState(null);
-  const [activeStreamUrl, setActiveStreamUrl] = useState('http://127.0.0.1:8000/api/video_feed');
+  const [activeStreamUrl, setActiveStreamUrl] = useState(`${API_BASE_URL}/api/video_feed`);
 
   // Poll backend endpoints
   const fetchSurveillanceData = async () => {
@@ -71,7 +71,7 @@ export default function App() {
         return (
           <CameraMatrixView 
             onSelectCamera={(cam) => {
-              setActiveStreamUrl(`http://127.0.0.1:8000/api/video_feed?cam_id=${cam.id}&t=${Date.now()}`);
+              setActiveStreamUrl(`${API_BASE_URL}/api/video_feed?cam_id=${cam.id}&t=${Date.now()}`);
               setActiveView('dashboard');
             }} 
           />

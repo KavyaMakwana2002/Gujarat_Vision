@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Network, Shield, RefreshCw, Camera, Sliders, CheckCircle2, Lock, Radio, AlertCircle } from 'lucide-react';
-import { surveillanceService } from '../services/api';
+import { surveillanceService, API_BASE_URL } from '../services/api';
 
 export default function RemoteNvrView() {
   const [config, setConfig] = useState({
@@ -119,7 +119,7 @@ export default function RemoteNvrView() {
             <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
               <img
                 key={streamKey}
-                src="http://127.0.0.1:8000/api/remote_nvr/video_feed"
+                src={`${API_BASE_URL}/api/remote_nvr/video_feed`}
                 alt="Remote NVR Stream"
                 className="w-full h-full object-cover"
                 onError={(e) => {

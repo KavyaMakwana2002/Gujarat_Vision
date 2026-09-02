@@ -2,6 +2,7 @@ import React from 'react';
 import StatCard from '../components/StatCard';
 import VideoPlayer from '../components/VideoPlayer';
 import { Camera, ShieldAlert, CheckCircle2, Cpu, Car, Shield } from 'lucide-react';
+import { API_BASE_URL } from '../services/api';
 
 export default function DashboardView({ stats, detections, liveAlerts, onConnectCustomStream, activeStreamUrl }) {
   return (
@@ -42,7 +43,7 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <VideoPlayer 
-            streamUrl={activeStreamUrl || "http://127.0.0.1:8000/api/video_feed"} 
+            streamUrl={activeStreamUrl || `${API_BASE_URL}/api/video_feed`} 
             title="Gujarat State Highway (Node #1 - SG Highway Post)" 
             badge="LIVE AI VEHICLE & ANPR SCAN" 
           />
