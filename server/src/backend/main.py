@@ -73,8 +73,10 @@ from src.ingestion.web_streamer import (
 )
 
 @app.get("/api/video_feed")
-def get_live_video_stream(cam_id: int = 1, city: str = "Ahmedabad", junction: str = "SG Highway Junction"):
+def get_live_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Sentinel Grid"):
     """Live MJPEG video stream with YOLOv8 & ANPR overlays directly for browser dashboard."""
+    if cam_id:
+        set_stream_source(cam_id)
     return StreamingResponse(
         generate_video_stream(cam_id=cam_id, city=city, junction=junction),
         media_type="multipart/x-mixed-replace; boundary=frame"

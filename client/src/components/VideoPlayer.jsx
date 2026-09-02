@@ -3,18 +3,38 @@ import { Camera, CameraOff, Play, Square, RefreshCw, Shield, AlertCircle, Radio 
 import { surveillanceService } from '../services/api';
 
 export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed", badge = "AI ANPR ACTIVE" }) {
-  const [isStreaming, setIsStreaming] = useState(false); // Default to FALSE so camera hardware is off on startup
+  const [isStreaming, setIsStreaming] = useState(true); // Auto-stream active camera
   const [key, setKey] = useState(Date.now());
   const [loading, setLoading] = useState(false);
+  const [streamError, setStreamError] = useState(false);
+
+  // Extract cam_id from streamUrl if present
+  const getCameraIdFromUrl = () => {
+    try {
+      const url = new URL(streamUrl, window.location.origin);
+      return url.searchParams.get("cam_id") || "cam01";
+    } catch {
+      return "cam01";
+    }
+  };
+
+  // Automatically activate stream whenever a new camera is selected
+  useEffect(() => {
+    setIsStreaming(true);
+    setStreamError(false);
+    setKey(Date.now());
+  }, [streamUrl]);
 
   const handleStartCamera = async () => {
     setLoading(true);
+    const targetCam = getCameraIdFromUrl();
     try {
-      await surveillanceService.startCamera("0");
+      await surveillanceService.startCamera(targetCam);
     } catch (err) {
       console.warn("Could not reach backend startCamera endpoint:", err);
     } finally {
       setIsStreaming(true);
+      setStreamError(false);
       setKey(Date.now());
       setLoading(false);
     }
@@ -33,9 +53,8 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
   };
 
   const handleRefresh = () => {
-    if (isStreaming) {
-      setKey(Date.now());
-    }
+    setStreamError(false);
+    setKey(Date.now());
   };
 
   return (
@@ -107,8 +126,11 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
               src={streamUrl}
               alt={title}
               className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.src = 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1200&q=80';
+              onError={() => {
+                setStreamError(true);
+                setTimeout(() => {
+                  setKey(Date.now());
+                }, 2000);
               }}
             />
 

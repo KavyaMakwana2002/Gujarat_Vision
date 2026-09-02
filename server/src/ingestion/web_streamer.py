@@ -251,7 +251,7 @@ def get_master_engine():
             _global_camera = MasterStreamEngine(CURRENT_STREAM_SOURCE, active=IS_CAMERA_ACTIVE)
         return _global_camera
 
-def generate_video_stream(cam_id: int = 1, city: str = "Ahmedabad", junction: str = "SG Highway Junction"):
+def generate_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Sentinel Grid"):
     """
     Stream ultra-smooth, jitter-free video with zero freeze to browser clients.
     """
