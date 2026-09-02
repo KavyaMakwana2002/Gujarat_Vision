@@ -94,69 +94,59 @@ class GovernmentCameraGateway:
             }
 
     def load_default_catalogue(self):
-        """Pre-populate sandbox catalogue conforming to Government schema."""
-        host_ip = self.gateway_host.replace("http://", "").replace("https://", "").split(":")[0]
+        """Pre-populate Sentinel Camera Grid catalogue conforming to official specification (cam01 - cam30)."""
+        sentinel_ip = "103.250.160.189"
+        cdn_host = "cctv.corp8.cloud"
+        
+        locations = [
+            ("cam01", "Ahmedabad SG Highway - Iscon Cross Road", "Ahmedabad", "H.264"),
+            ("cam02", "Surat Ring Road - Majura Gate Post", "Surat", "H.264"),
+            ("cam03", "Dwarka Coastal Highway - Gomti Ghat Post", "Devbhumi Dwarka", "H.264"),
+            ("cam04", "Mehsana Highway - Modhera Circle Node", "Mehsana", "H.264"),
+            ("cam05", "Vadodara Urban Grid - Sayajigunj Tower", "Vadodara", "H.264"),
+            ("cam06", "Rajkot Saurashtra Junction - Kalawad Road", "Rajkot", "H.264"),
+            ("cam07", "Bhuj Border Highway - Madhapar Circle", "Kutch", "H.264"),
+            ("cam08", "Gandhinagar Capital Grid - CH-0 Checkpoint", "Gandhinagar", "H.264"),
+            ("cam09", "Patan Highway - Rani Ki Vav Node", "Patan", "H.264"),
+            ("cam10", "Palanpur State Highway - Ambaji Link Post", "Banaskantha", "H.264"),
+            ("cam11", "Gandhidham Kandla Port - Commercial Gate", "Kutch", "H.264"),
+            ("cam12", "Porbandar Coastal Road - Chowpati Bridge", "Porbandar", "H.264"),
+            ("cam13", "Amreli Liliya Road - Industrial Junction", "Amreli", "H.264"),
+            ("cam14", "Kutch Border Patrol - Mata No Madh Gate", "Kutch", "H.264"),
+            ("cam15", "Jamnagar Digjam Circle - Port Corridor", "Jamnagar", "H.264"),
+            ("cam16", "Bhavnagar Waghawadi - Ghogha Circle", "Bhavnagar", "H.264"),
+            ("cam17", "Junagadh Girnar Taleti - Kalwa Chowk", "Junagadh", "H.264"),
+            ("cam18", "Khambhalia Nagar Gate - Dwarka Checkpost", "Devbhumi Dwarka", "H.264"),
+            ("cam19", "Bhabhar APMC - Suigam Border Node", "Banaskantha", "H.264"),
+            ("cam20", "Morbi Highway - Ceramic Zone Junction", "Morbi", "H.264"),
+            ("cam21", "Anand Expressway - Milk City Toll Plaza", "Anand", "H.264"),
+            ("cam22", "Bharuch Narmada Bridge - Golden Bridge Gate", "Bharuch", "H.264"),
+            ("cam23", "Navsari National Highway 48 - Toll Node", "Navsari", "H.264"),
+            ("cam24", "Valsad Coastal Highway - Daman Border Post", "Valsad", "H.264"),
+            ("cam25", "Godhra State Highway - Lunawada Junction", "Panchmahal", "H.264"),
+            ("cam26", "Surendranagar Highway - Wadhwan Circle", "Surendranagar", "H.264"),
+            ("cam27", "Botad Swaminarayan Temple - Highway Node", "Botad", "H.264"),
+            ("cam28", "Dahod Inter-State Checkpoint - MP Border", "Dahod", "H.264"),
+            ("cam29", "Somnath Coastal Road - Temple Gate Post", "Gir Somnath", "H.264"),
+            ("cam30", "Gujarat Inter-District Highway Patrol Node", "Statewide", "H.264"),
+        ]
+
         self.cameras = [
             {
-                "id": 1,
-                "name": "Ahmedabad SG Highway - Iscon Flyover",
-                "location": "Ahmedabad SG Highway (NH-147)",
-                "codec": "H.264",
+                "id": cam_id,
+                "cam_id": cam_id,
+                "name": name,
+                "location": f"{loc} (Gujarat Sentinel Grid)",
+                "city": loc,
+                "codec": codec,
                 "resolution": "1920x1080",
                 "fps": 30.0,
                 "live": True,
-                "rtsp_url": f"rtsp://{host_ip}:8554/stream/1",
-                "whep_url": f"http://{host_ip}:8889/stream/1/whep",
-                "hls_url": f"http://{host_ip}/live/stream/1/index.m3u8"
-            },
-            {
-                "id": 2,
-                "name": "Surat Ring Road - Majura Gate Post",
-                "location": "Surat Ring Road Corridor",
-                "codec": "H.265",
-                "resolution": "1920x1080",
-                "fps": 30.0,
-                "live": True,
-                "rtsp_url": f"rtsp://{host_ip}:8554/stream/2",
-                "whep_url": f"http://{host_ip}:8889/stream/2/whep",
-                "hls_url": f"http://{host_ip}/live/stream/2/index.m3u8"
-            },
-            {
-                "id": 3,
-                "name": "Dwarka Temple - Gomti Ghat Entry",
-                "location": "Dwarka Coastal Border Post",
-                "codec": "H.264",
-                "resolution": "1280x720",
-                "fps": 25.0,
-                "live": True,
-                "rtsp_url": f"rtsp://{host_ip}:8554/stream/3",
-                "whep_url": f"http://{host_ip}:8889/stream/3/whep",
-                "hls_url": f"http://{host_ip}/live/stream/3/index.m3u8"
-            },
-            {
-                "id": 4,
-                "name": "Mehsana Highway - Modhera Circle Node",
-                "location": "Mehsana State Highway 41",
-                "codec": "H.264",
-                "resolution": "1920x1080",
-                "fps": 30.0,
-                "live": True,
-                "rtsp_url": f"rtsp://{host_ip}:8554/stream/4",
-                "whep_url": f"http://{host_ip}:8889/stream/4/whep",
-                "hls_url": f"http://{host_ip}/live/stream/4/index.m3u8"
-            },
-            {
-                "id": 5,
-                "name": "Kutch - Bhuj Jubilee Ground Circle",
-                "location": "Bhuj & Madhapar Road",
-                "codec": "H.265",
-                "resolution": "1920x1080",
-                "fps": 30.0,
-                "live": True,
-                "rtsp_url": f"rtsp://{host_ip}:8554/stream/5",
-                "whep_url": f"http://{host_ip}:8889/stream/5/whep",
-                "hls_url": f"http://{host_ip}/live/stream/5/index.m3u8"
+                "rtsp_url": f"rtsp://{sentinel_ip}:8554/stream/{cam_id}",
+                "whep_url": f"http://{sentinel_ip}:8889/stream/{cam_id}/whep",
+                "hls_url": f"https://{cdn_host}/{cam_id}/index.m3u8"
             }
+            for cam_id, name, loc, codec in locations
         ]
 
     def get_camera_by_id(self, cam_id: int) -> dict:

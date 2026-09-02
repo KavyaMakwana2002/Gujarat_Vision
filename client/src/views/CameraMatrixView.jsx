@@ -1,51 +1,73 @@
 import React, { useState } from 'react';
-import { Camera, Search, Filter, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, Search, Eye, Radio, ExternalLink, Shield, CheckCircle2, Play } from 'lucide-react';
+
+export const SENTINEL_CAMERAS = [
+  { id: "cam01", name: "Ahmedabad SG Highway - Iscon Cross Road", city: "Ahmedabad", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam02", name: "Surat Ring Road - Majura Gate Post", city: "Surat", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam03", name: "Dwarka Coastal Highway - Gomti Ghat Post", city: "Devbhumi Dwarka", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam04", name: "Mehsana Highway - Modhera Circle Node", city: "Mehsana", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam05", name: "Vadodara Urban Grid - Sayajigunj Tower", city: "Vadodara", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam06", name: "Rajkot Saurashtra Junction - Kalawad Road", city: "Rajkot", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam07", name: "Bhuj Border Highway - Madhapar Circle", city: "Kutch", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam08", name: "Gandhinagar Capital Grid - CH-0 Checkpoint", city: "Gandhinagar", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam09", name: "Patan Highway - Rani Ki Vav Node", city: "Patan", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam10", name: "Palanpur State Highway - Ambaji Link Post", city: "Banaskantha", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam11", name: "Gandhidham Kandla Port - Commercial Gate", city: "Kutch", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam12", name: "Porbandar Coastal Road - Chowpati Bridge", city: "Porbandar", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam13", name: "Amreli Liliya Road - Industrial Junction", city: "Amreli", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam14", name: "Kutch Border Patrol - Mata No Madh Gate", city: "Kutch", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam15", name: "Jamnagar Digjam Circle - Port Corridor", city: "Jamnagar", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam16", name: "Bhavnagar Waghawadi - Ghogha Circle", city: "Bhavnagar", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam17", name: "Junagadh Girnar Taleti - Kalwa Chowk", city: "Junagadh", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam18", name: "Khambhalia Nagar Gate - Dwarka Checkpost", city: "Devbhumi Dwarka", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam19", name: "Bhabhar APMC - Suigam Border Node", city: "Banaskantha", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam20", name: "Morbi Highway - Ceramic Zone Junction", city: "Morbi", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam21", name: "Anand Expressway - Milk City Toll Plaza", city: "Anand", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam22", name: "Bharuch Narmada Bridge - Golden Bridge Gate", city: "Bharuch", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam23", name: "Navsari National Highway 48 - Toll Node", city: "Navsari", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam24", name: "Valsad Coastal Highway - Daman Border Post", city: "Valsad", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam25", name: "Godhra State Highway - Lunawada Junction", city: "Panchmahal", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam26", name: "Surendranagar Highway - Wadhwan Circle", city: "Surendranagar", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam27", name: "Botad Swaminarayan Temple - Highway Node", city: "Botad", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam28", name: "Dahod Inter-State Checkpoint - MP Border", city: "Dahod", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam29", name: "Somnath Coastal Road - Temple Gate Post", city: "Gir Somnath", codec: "H.264", res: "1080p", fps: 30 },
+  { id: "cam30", name: "Gujarat Inter-District Highway Patrol Node", city: "Statewide", codec: "H.264", res: "1080p", fps: 30 },
+];
 
 export const DISTRICTS = [
-  { name: 'All Gujarat Matrix', count: 80000 },
-  { name: 'Ahmedabad Police Command', count: 12500 },
-  { name: 'Surat City & Industrial', count: 11000 },
-  { name: 'Vadodara Urban Node', count: 7500 },
-  { name: 'Rajkot Saurashtra Grid', count: 6800 },
-  { name: 'Kutch Border & Port Area', count: 6200 },
-  { name: 'Dwarka Coastal Post', count: 4800 },
-  { name: 'Bhavnagar Highway Grid', count: 4500 },
-  { name: 'Gandhinagar Capital Post', count: 5200 },
-  { name: 'Mehsana State Highway', count: 4200 },
+  { name: 'All Gujarat Grid', count: 30 },
+  { name: 'Ahmedabad', count: 1 },
+  { name: 'Surat', count: 1 },
+  { name: 'Vadodara', count: 1 },
+  { name: 'Rajkot', count: 1 },
+  { name: 'Kutch', count: 3 },
+  { name: 'Devbhumi Dwarka', count: 2 },
+  { name: 'Gandhinagar', count: 1 },
 ];
 
 export default function CameraMatrixView({ onSelectCamera }) {
-  const [selectedDistrict, setSelectedDistrict] = useState('All Gujarat Matrix');
+  const [selectedCity, setSelectedCity] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const perPage = 12;
 
-  // Generate virtual camera items for the current page
-  const totalInScope = DISTRICTS.find(d => d.name === selectedDistrict)?.count || 80000;
-  const totalPages = Math.ceil(totalInScope / perPage);
-
-  const cameras = Array.from({ length: perPage }, (_, i) => {
-    const camId = (page - 1) * perPage + i + 1;
-    return {
-      id: camId,
-      code: `GJ-CAM-${String(camId).padStart(5, '0')}`,
-      location: `${selectedDistrict} - Junction Node #${camId}`,
-      status: camId % 9 === 0 ? 'AI SYNCING' : 'ONLINE',
-      fps: 30,
-      res: '1080p'
-    };
+  const filteredCameras = SENTINEL_CAMERAS.filter((cam) => {
+    const matchesCity = selectedCity === 'All' || cam.city === selectedCity;
+    const matchesSearch = 
+      cam.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cam.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cam.city.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCity && matchesSearch;
   });
 
   return (
     <div className="space-y-6">
       {/* Header & Filter Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800 shadow-xl">
         <div>
           <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-            <Camera className="w-5 h-5 text-blue-400" /> 80,000 Live Surveillance Camera Matrix
+            <Camera className="w-5 h-5 text-blue-400" /> Sentinel Camera Grid (30 Operational Nodes)
           </h2>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
-            Active state-wide CCTV network across 33 districts of Gujarat
+            Live operational RTSP over TCP (103.250.160.189:8554), HLS & WebRTC feeds across Gujarat
           </p>
         </div>
 
@@ -55,81 +77,89 @@ export default function CameraMatrixView({ onSelectCamera }) {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Search camera number..."
+              placeholder="Search cam01, city, node..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 outline-none focus:border-blue-500 font-mono w-56"
+              className="pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-slate-200 outline-none w-48 focus:border-blue-500"
             />
           </div>
 
-          <select
-            value={selectedDistrict}
-            onChange={(e) => {
-              setSelectedDistrict(e.target.value);
-              setPage(1);
-            }}
-            className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-blue-500 font-mono"
-          >
-            {DISTRICTS.map((d) => (
-              <option key={d.name} value={d.name}>
-                {d.name} ({d.count.toLocaleString()} Feeds)
-              </option>
-            ))}
-          </select>
+          <span className="text-xs font-mono px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold flex items-center gap-1.5">
+            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+            30 NODES ONLINE
+          </span>
+        </div>
+      </div>
+
+      {/* Grid Network Gateway Protocols Info Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+          <div className="text-slate-400 font-bold mb-1">RTSP OVER TCP (AI INFERENCE)</div>
+          <div className="text-cyan-400 text-[11px] truncate">rtsp://103.250.160.189:8554/stream/&lt;id&gt;</div>
+        </div>
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+          <div className="text-slate-400 font-bold mb-1">WEBRTC / WHEP (LOW-LATENCY)</div>
+          <div className="text-emerald-400 text-[11px] truncate">http://103.250.160.189:8889/stream/&lt;id&gt;/whep</div>
+        </div>
+        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+          <div className="text-slate-400 font-bold mb-1">HLS CDN STREAM (WEB / REMOTE)</div>
+          <div className="text-amber-400 text-[11px] truncate">https://cctv.corp8.cloud/&lt;id&gt;/index.m3u8</div>
         </div>
       </div>
 
       {/* Cameras Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {cameras.map((cam) => (
-          <div
-            key={cam.id}
-            className="rounded-2xl bg-slate-900/80 border border-slate-800 p-3 hover:border-blue-500/50 transition group flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-mono text-xs font-bold text-white group-hover:text-blue-400 transition">
-                  {cam.code}
-                </span>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
-                  {cam.status}
-                </span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+        {filteredCameras.map((cam) => {
+          const rtspUrl = `rtsp://103.250.160.189:8554/stream/${cam.id}`;
+          const hlsUrl = `https://cctv.corp8.cloud/${cam.id}/index.m3u8`;
+
+          return (
+            <div
+              key={cam.id}
+              className="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 hover:border-blue-500/60 transition group flex flex-col justify-between shadow-lg"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-mono font-bold text-xs">
+                      {cam.id.toUpperCase()}
+                    </span>
+                    <span className="font-sans text-xs font-bold text-white group-hover:text-blue-400 transition line-clamp-1">
+                      {cam.name}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold whitespace-nowrap">
+                    100% ONLINE
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono text-slate-400 mb-2">
+                  District: <b className="text-slate-300">{cam.city}</b> • {cam.codec} • {cam.res}
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 bg-slate-950 p-2 rounded-lg border border-slate-800/80 truncate">
+                  {rtspUrl}
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400 truncate">{cam.location}</p>
-            </div>
 
-            <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-slate-500">{cam.res} • {cam.fps} FPS</span>
-              <button
-                onClick={() => onSelectCamera && onSelectCamera(cam)}
-                className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1"
-              >
-                <Eye className="w-3 h-3" /> View
-              </button>
+              <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <a
+                  href={hlsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-mono text-slate-400 hover:text-amber-400 transition flex items-center gap-1"
+                  title="Open HLS CDN Stream"
+                >
+                  <ExternalLink className="w-3 h-3" /> HLS Feed
+                </a>
+                <button
+                  onClick={() => onSelectCamera && onSelectCamera(cam)}
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold font-mono transition flex items-center gap-1.5 shadow-md shadow-blue-600/20"
+                >
+                  <Play className="w-3 h-3 fill-current" /> Stream to AI
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Pagination Bar */}
-      <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-xs font-mono text-slate-400">
-        <span>Showing Page {page} of {totalPages.toLocaleString()} ({totalInScope.toLocaleString()} Feeds)</span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPage(Math.max(1, page - 1))}
-            disabled={page === 1}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 disabled:opacity-50"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setPage(Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 disabled:opacity-50"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

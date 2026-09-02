@@ -70,8 +70,11 @@ export default function App() {
       case 'camera-matrix':
         return (
           <CameraMatrixView 
-            onSelectCamera={(cam) => {
-              setActiveStreamUrl(`${API_BASE_URL}/api/video_feed?cam_id=${cam.id}&t=${Date.now()}`);
+            onSelectCamera={async (cam) => {
+              try {
+                await surveillanceService.setStreamSource(cam.id);
+              } catch (e) {}
+              setActiveStreamUrl(`${API_BASE_URL}/api/video_feed?cam_id=${cam.id}&city=${encodeURIComponent(cam.city)}&t=${Date.now()}`);
               setActiveView('dashboard');
             }} 
           />

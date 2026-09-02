@@ -18,16 +18,26 @@ def get_detector():
         _detector_instance = SentinelDetector()
     return _detector_instance
 
-def start_camera(source=0):
-    """Explicitly activate camera hardware and begin video capture."""
+def resolve_camera_source(source):
+    """Resolve camera identifiers (e.g. cam01, 1, webcam, rtsp://) to live Sentinel Grid RTSP stream."""
+    s = str(source).strip()
+    if s.lower() in ["webcam", "local", "laptop"]:
+        return 0
+    if s.startswith("cam") and len(s) >= 4:
+        return f"rtsp://103.250.160.189:8554/stream/{s}"
+    if s.isdigit():
+        val = int(s)
+        if 1 <= val <= 30:
+            return f"rtsp://103.250.160.189:8554/stream/cam{val:02d}"
+        return val
+    return source
+
+def start_camera(source="cam01"):
+    """Explicitly activate Sentinel Camera Grid feed (or local webcam) and begin video capture."""
     global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE, _global_camera
+    resolved = resolve_camera_source(source)
     with _camera_lock:
-        if str(source).lower() in ["webcam", "0", "cam"]:
-            CURRENT_STREAM_SOURCE = 0
-        elif isinstance(source, str) and source.isdigit():
-            CURRENT_STREAM_SOURCE = int(source)
-        else:
-            CURRENT_STREAM_SOURCE = source
+        CURRENT_STREAM_SOURCE = resolved
         IS_CAMERA_ACTIVE = True
 
         if _global_camera:
@@ -51,15 +61,11 @@ def stop_camera():
     return {"status": "standby", "source": "standby"}
 
 def set_stream_source(source):
-    """Set dynamic RTSP URL, Video file path, or Webcam ID."""
+    """Set dynamic RTSP URL, Video file path, or Sentinel Grid Camera ID."""
     global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE, _global_camera
+    resolved = resolve_camera_source(source)
     with _camera_lock:
-        if str(source).lower() in ["webcam", "0", "cam"]:
-            CURRENT_STREAM_SOURCE = 0
-        elif isinstance(source, str) and source.isdigit():
-            CURRENT_STREAM_SOURCE = int(source)
-        else:
-            CURRENT_STREAM_SOURCE = source
+        CURRENT_STREAM_SOURCE = resolved
         IS_CAMERA_ACTIVE = True
             
         if _global_camera:
