@@ -1,4 +1,5 @@
 import cv2
+import gc
 
 try:
     import easyocr
@@ -11,24 +12,45 @@ except ImportError:
 
 class LicensePlateReader:
     def __init__(self):
+        # Lazy load EasyOCR reader on demand to save ~300MB RAM at startup
         self.reader = None
-        if HAS_EASYOCR:
+        self._init_attempted = False
+
+    def _get_reader(self):
+        if not HAS_EASYOCR:
+            return None
+            
+        if self.reader is None and not self._init_attempted:
+            self._init_attempted = True
             try:
+                # Memory guard: Check available RAM on Linux / Render
+                try:
+                    import psutil
+                    avail_mb = psutil.virtual_memory().available / (1024 * 1024)
+                    if avail_mb < 180:
+                        print(f"[!] Warning: Available memory ({avail_mb:.1f}MB) is too low for EasyOCR. Skipping OCR initialization to prevent OOM crash.")
+                        return None
+                except Exception:
+                    pass
+
                 use_gpu = torch.cuda.is_available() if torch else False
-                print(f"[*] ANPR (EasyOCR) Model loading... (GPU={use_gpu})")
+                print(f"[*] ANPR (EasyOCR) Model loading on demand... (GPU={use_gpu})")
                 self.reader = easyocr.Reader(['en'], gpu=use_gpu)
                 print("[+] ANPR (EasyOCR) Engine successfully initialized!")
+                gc.collect()
             except Exception as e:
-                print(f"[!] Warning: EasyOCR initialization deferred: {e}")
-        else:
-            print("[!] Warning: easyocr module not found. Falling back to passive detection mode.")
+                print(f"[!] Warning: EasyOCR reader initialization failed: {e}")
+                self.reader = None
+
+        return self.reader
 
     def read_plate(self, image_crop):
-        if not self.reader or image_crop is None or image_crop.size == 0:
+        reader = self._get_reader()
+        if not reader or image_crop is None or image_crop.size == 0:
             return ""
         try:
             # Cropped image (khali number plate no bhag) mathi text read karshe
-            results = self.reader.readtext(image_crop)
+            results = reader.readtext(image_crop)
             
             detected_text = ""
             for (bbox, text, prob) in results:

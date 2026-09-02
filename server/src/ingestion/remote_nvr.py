@@ -18,21 +18,13 @@ class RemoteNVRClient:
     """
     Dedicated Remote Shop NVR & IP Camera Integration Client (Different Network / VPN Gateway)
     Fully optimized for COREPRIX (Model: CPI-5M-B3SL-TW) & other ONVIF 5MP IP cameras.
-    
-    Features:
-      - Multi-path RTSP auto-probing (automatically finds working RTSP path)
-      - Network reachability & port socket diagnostics
-      - RTSP over TCP with FFMPEG hardware acceleration
-      - PTS Monotonic Clock Timing (CAP_PROP_POS_MSEC)
-      - Exponential Reconnect Backoff (2s -> 4s -> 8s -> 16s -> 30s)
-      - Zero-freeze Bounded Frame Queue & Decoupled YOLOv8 ANPR Pipeline
     """
 
     BACKOFF_SEQUENCE = [2, 4, 8, 16, 30]
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.detector = SentinelDetector()
+        self.detector = None # Lazy loaded on demand to stay under 512MB RAM
         
         # Configuration parameters
         self.nvr_host = "192.168.1.100" # Local shop IP, DDNS, or VPN IP (e.g. 10.8.0.2)
@@ -242,6 +234,9 @@ class RemoteNVRClient:
             
             if frame_to_process is not None:
                 try:
+                    if self.detector is None:
+                        from src.detection.detector import SentinelDetector
+                        self.detector = SentinelDetector()
                     annotated = self.detector.detect_objects(
                         frame_to_process, 
                         pts_ms=self.last_pts_ms,

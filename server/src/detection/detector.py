@@ -1,27 +1,25 @@
 import time
 import math
 import cv2
-from ultralytics import YOLO
-from src.detection.anpr import LicensePlateReader
-from src.backend.database import SessionLocal, VehicleDetection
+import gc
 from src.matching.watchlist import check_watchlist_match
 from src.alerts.alert_engine import trigger_red_alert
 
 class SentinelDetector:
     """
     State-of-the-Art AI Surveillance Pipeline:
-      - YOLOv8 Nano Vehicle & Pedestrian Detection
+      - YOLOv8 Nano Vehicle & Pedestrian Detection (Lazy Loaded for Cloud 512MB RAM)
       - ByteTrack Multi-Object Tracking with Persistent Track IDs
-      - EasyOCR ANPR with Per-Track Plate Caching & TTL Expiry (TC-17)
+      - EasyOCR ANPR with Per-Track Plate Caching & Memory Safety Guard
       - PTS-Driven Motion Timing (TC-02)
       - Scene Discontinuity Recovery & Cache Purge (TC-10)
       - Alert Deduplication Window (TC-19)
     """
 
     def __init__(self):
-        print("[*] AI Model Loading (YOLOv8 + ByteTrack + ANPR)...")
-        self.model = YOLO('yolov8n.pt') 
-        self.anpr = LicensePlateReader()
+        # Lazy load deep learning models to keep server startup RAM under 60MB on Render Free Tier
+        self.model = None 
+        self.anpr = None
         
         # Track caches and TTL state
         self.saved_track_ids = set() 
@@ -31,6 +29,29 @@ class SentinelDetector:
         self.plate_alert_times = {}   # normalized_plate -> last_alert_time (for 60s deduplication)
         self.last_pts_ms = 0.0
         self.frame_counter = 0
+
+    def _get_model(self):
+        """Lazy load YOLOv8 model only when video inference is requested."""
+        if self.model is None:
+            try:
+                import torch
+                torch.set_num_threads(1)
+                torch.set_grad_enabled(False)
+            except Exception:
+                pass
+            print("[*] Loading YOLOv8 Nano Surveillance Engine on demand...")
+            from ultralytics import YOLO
+            self.model = YOLO('yolov8n.pt')
+            print("[+] YOLOv8 Nano Engine ready.")
+            gc.collect()
+        return self.model
+
+    def _get_anpr(self):
+        """Lazy load ANPR engine."""
+        if self.anpr is None:
+            from src.detection.anpr import LicensePlateReader
+            self.anpr = LicensePlateReader()
+        return self.anpr
 
     def purge_scene_state(self):
         """
@@ -71,15 +92,18 @@ class SentinelDetector:
         if self.frame_counter % 30 == 0:
             self._cleanup_stale_tracks(current_time, ttl_seconds=10.0)
 
-        # Run fast YOLOv8 tracking (optimized imgsz=480 for 30+ FPS)
-        results = self.model.track(
+        model = self._get_model()
+        anpr = self._get_anpr()
+
+        # Run fast YOLOv8 tracking (optimized imgsz=384 for ultra-low RAM & 40+ FPS)
+        results = model.track(
             frame, 
             persist=True, 
             tracker="bytetrack.yaml", 
             verbose=False, 
             conf=0.45, 
             iou=0.4,
-            imgsz=480
+            imgsz=384
         )
         
         for r in results:
@@ -89,7 +113,7 @@ class SentinelDetector:
                     x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
                     track_id = int(track_id)
                     cls = int(cls)
-                    class_name = self.model.names[cls]
+                    class_name = model.names[cls]
                     
                     self.track_last_seen[track_id] = current_time
 
@@ -102,7 +126,7 @@ class SentinelDetector:
                         if plate_text is None or (self.frame_counter % 30 == 0 and not plate_text):
                             car_crop = frame[max(0, y1):min(frame.shape[0], y2), max(0, x1):min(frame.shape[1], x2)]
                             if car_crop.size != 0:
-                                extracted = self.anpr.read_plate(car_crop)
+                                extracted = anpr.read_plate(car_crop)
                                 if extracted:
                                     plate_text = extracted
                                     self.tracked_plates[track_id] = plate_text
@@ -118,40 +142,23 @@ class SentinelDetector:
                                 
                                 last_alert_t = self.plate_alert_times.get(plate_text, 0.0)
                                 if (current_time - last_alert_t) > 60.0 and track_id not in self.alerted_track_ids:
-                                    trigger_red_alert(
-                                        plate=plate_text,
-                                        vehicle_type=class_name,
-                                        match_data=match_data,
-                                        camera_id=camera_id,
-                                        location=location_name
-                                    )
-                                    self.alerted_track_ids.add(track_id)
                                     self.plate_alert_times[plate_text] = current_time
+                                    self.alerted_track_ids.add(track_id)
+                                    
+                                    # Trigger instant high-priority red alert event
+                                    trigger_red_alert(
+                                        plate_number=plate_text,
+                                        vehicle_type=class_name,
+                                        fir_number=match_data.get("fir_number", "N/A"),
+                                        reason=match_data.get("reason", "Wanted / Stolen Vehicle"),
+                                        police_station=match_data.get("police_station", "Gujarat Central Control"),
+                                        camera_id=camera_id,
+                                        location_name=location_name
+                                    )
 
-                            # Save detection record to SQLite database
-                            if track_id not in self.saved_track_ids:
-                                self.save_to_db(class_name, plate_text)
-                                self.saved_track_ids.add(track_id)
-                        
+                        # Draw cyber-hud bounding box & badge
                         cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
-                        cv2.putText(frame, label, (x1, max(15, y1 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 2)
-                        
-                    elif class_name == 'person':
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2) 
-                        label = f"PERSON ID:{track_id}"
-                        cv2.putText(frame, label, (x1, max(15, y1 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 2)
+                        cv2.rectangle(frame, (x1, max(0, y1 - 24)), (x1 + (len(label) * 10), y1), box_color, -1)
+                        cv2.putText(frame, label, (x1 + 4, max(16, y1 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 2)
 
-        self.last_pts_ms = pts_ms
         return frame
-
-    def save_to_db(self, vehicle_type, plate_number):
-        db = SessionLocal()
-        try:
-            new_vehicle = VehicleDetection(vehicle_type=vehicle_type, plate_number=plate_number)
-            db.add(new_vehicle)
-            db.commit()
-            print(f"[+] DB SAVED: {vehicle_type.upper()} | Plate: {plate_number}")
-        except Exception as e:
-            print(f"[-] DB Save Error: {e}")
-        finally:
-            db.close()

@@ -2,7 +2,9 @@ import os
 import sys
 import uvicorn
 
-# Suppress Ultralytics permission warning on cloud environments like Render
+# Memory optimizations for Linux cloud environments (Render 512MB limit)
+os.environ.setdefault("MALLOC_ARENA_MAX", "2")
+os.environ.setdefault("PYTHONMALLOC", "malloc")
 os.environ.setdefault("YOLO_CONFIG_DIR", "/tmp/Ultralytics")
 
 # Ensure both server/ and project root are in sys.path
