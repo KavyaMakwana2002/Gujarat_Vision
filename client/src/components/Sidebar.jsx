@@ -11,21 +11,25 @@ import {
   ShieldAlert, 
   Crosshair, 
   Network,
-  LogOut
+  LogOut,
+  Building2,
+  Grid
 } from 'lucide-react';
 
 export const NAV_ITEMS = [
   { id: 'dashboard', label: '1. Mission Control', icon: LayoutDashboard, sub: 'Live Feed & Metrics' },
-  { id: 'camera-matrix', label: '2. 80,000 Camera Grid', icon: Camera, sub: 'District Filter' },
-  { id: 'live-location', label: '3. Live Location Hubs', icon: MapPin, sub: 'City Junctions' },
-  { id: 'gis-map', label: '4. GIS Command Map', icon: Map, sub: 'Gujarat Police GIS' },
-  { id: 'vehicle-details', label: '5. Vehicle Details', icon: Car, sub: 'Specs & Registrations' },
-  { id: 'vehicle-search', label: '6. Vehicle Search', icon: Search, sub: 'ANPR Quick Lookup' },
-  { id: 'record-video', label: '7. Record & Evidence', icon: Disc, sub: 'Incident Clips' },
-  { id: 'all-alerts', label: '8. All Hotlist Alerts', icon: AlertTriangle, sub: 'eGujCop Red Alerts', badgeColor: 'text-red-400' },
-  { id: 'stolen-cars', label: '9. Stolen Cars Register', icon: ShieldAlert, sub: 'VAHAN 4.0 Synced' },
-  { id: 'blacklist-loc', label: '10. Blacklist GPS Tracker', icon: Crosshair, sub: 'Active Targets' },
-  { id: 'remote-nvr', label: '11. Remote Shop NVR', icon: Network, sub: 'COREPRIX 5MP / VPN', highlight: true },
+  { id: 'registry', label: '2. Centralised CCTV Registry', icon: Building2, sub: 'Bulk Import & Gap Analysis', highlight: true },
+  { id: 'video-wall', label: '3. Multi-VMS Video Wall', icon: Grid, sub: '2x2 & 3x3 Live Matrix', highlight: true },
+  { id: 'camera-matrix', label: '4. Sentinel Camera Grid', icon: Camera, sub: '30 Operational Nodes' },
+  { id: 'gis-map', label: '5. Real GIS Command Map', icon: Map, sub: 'GPS Operational Pins' },
+  { id: 'live-location', label: '6. Live Location Hubs', icon: MapPin, sub: 'City Junctions' },
+  { id: 'vehicle-details', label: '7. Vehicle Details', icon: Car, sub: 'Specs & Registrations' },
+  { id: 'vehicle-search', label: '8. Vehicle Search', icon: Search, sub: 'ANPR Quick Lookup' },
+  { id: 'record-video', label: '9. Record & Evidence', icon: Disc, sub: 'Incident Clips' },
+  { id: 'all-alerts', label: '10. All Hotlist Alerts', icon: AlertTriangle, sub: 'eGujCop Red Alerts', badgeColor: 'text-red-400' },
+  { id: 'stolen-cars', label: '11. Stolen Cars Register', icon: ShieldAlert, sub: 'VAHAN 4.0 Synced' },
+  { id: 'blacklist-loc', label: '12. Blacklist GPS Tracker', icon: Crosshair, sub: 'Active Targets' },
+  { id: 'remote-nvr', label: '13. Remote Shop NVR', icon: Network, sub: 'COREPRIX 5MP / VPN' },
 ];
 
 export default function Sidebar({ activeView, setActiveView, onLogout }) {

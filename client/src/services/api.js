@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+export const API_BASE_URL = (() => {
+  // If running on localhost / 127.0.0.1 in browser, use local backend by default
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://127.0.0.1:8000';
+  }
+  // If deployed to production (e.g. Vercel), use VITE_API_URL or Render
+  return import.meta.env.VITE_API_URL || 'https://gujarat-vision-1.onrender.com';
+})();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -37,6 +44,13 @@ export const surveillanceService = {
   // Remote NVR (COREPRIX / VPN)
   getRemoteNVRStatus: () => api.get('/api/remote_nvr/status'),
   configureRemoteNVR: (config) => api.post('/api/remote_nvr/configure', config),
+
+  // Centralised CCTV Registry & GIS Mapping Model
+  getRegistryCameras: (params) => api.get('/api/registry/cameras', { params }),
+  onboardCamera: (cameraData) => api.post('/api/registry/onboard', cameraData),
+  bulkImportCameras: (cameras) => api.post('/api/registry/bulk_import', { cameras }),
+  getGapAnalysisReport: () => api.get('/api/registry/gap_analysis'),
+  getExportRegistryUrl: () => `${API_BASE_URL}/api/registry/export`,
 
   // Auth
   login: (username, password) => api.post('/api/auth/login', { username, password }),

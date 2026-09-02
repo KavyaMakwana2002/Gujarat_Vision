@@ -3,7 +3,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import RedAlertModal from './components/RedAlertModal';
 
-// 11 Application Views
+// Views
 import DashboardView from './views/DashboardView';
 import CameraMatrixView from './views/CameraMatrixView';
 import LiveLocationView from './views/LiveLocationView';
@@ -15,16 +15,99 @@ import AllAlertsView from './views/AllAlertsView';
 import StolenRegistryView from './views/StolenRegistryView';
 import BlacklistTrackerView from './views/BlacklistTrackerView';
 import RemoteNvrView from './views/RemoteNvrView';
+import CctvRegistryView from './views/CctvRegistryView';
+import VideoWallView from './views/VideoWallView';
 
 import { surveillanceService, API_BASE_URL } from './services/api';
 
+const VALID_VIEWS = [
+  'dashboard',
+  'registry',
+  'video-wall',
+  'camera-matrix',
+  'live-location',
+  'gis-map',
+  'vehicle-details',
+  'vehicle-search',
+  'record-video',
+  'all-alerts',
+  'stolen-cars',
+  'blacklist-loc',
+  'remote-nvr'
+];
+
 export default function App() {
-  const [activeView, setActiveView] = useState('dashboard');
+  // 1. Read initial view cleanly from pathname or localStorage (WITHOUT any # hash)
+  const getInitialView = () => {
+    // If URL has an old hash, convert it to clean path and clean history
+    if (window.location.hash) {
+      const cleanHash = window.location.hash.replace(/^#\/?/, '').split('?')[0].trim();
+      if (VALID_VIEWS.includes(cleanHash)) {
+        window.history.replaceState(null, '', `/${cleanHash}`);
+        localStorage.setItem('sentinel_active_view', cleanHash);
+        return cleanHash;
+      }
+    }
+
+    // Clean pathname e.g. "/live-location" -> "live-location"
+    const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('?')[0].trim();
+    if (VALID_VIEWS.includes(path)) {
+      localStorage.setItem('sentinel_active_view', path);
+      return path;
+    }
+
+    // Fallback to localStorage saved state
+    const saved = localStorage.getItem('sentinel_active_view');
+    if (saved && VALID_VIEWS.includes(saved)) {
+      const targetPath = saved === 'dashboard' ? '/' : `/${saved}`;
+      window.history.replaceState(null, '', targetPath);
+      return saved;
+    }
+
+    return 'dashboard';
+  };
+
+  const getInitialStreamUrl = () => {
+    const savedStream = localStorage.getItem('sentinel_active_stream');
+    return savedStream || `${API_BASE_URL}/api/video_feed`;
+  };
+
+  const [activeView, setActiveView] = useState(getInitialView);
   const [stats, setStats] = useState({ total_cameras: 80000, total_vehicles: 14820, active_alerts: 3 });
   const [detections, setDetections] = useState([]);
   const [liveAlerts, setLiveAlerts] = useState([]);
   const [activeRedAlert, setActiveRedAlert] = useState(null);
-  const [activeStreamUrl, setActiveStreamUrl] = useState(`${API_BASE_URL}/api/video_feed`);
+  const [activeStreamUrl, setActiveStreamUrl] = useState(getInitialStreamUrl);
+
+  // 2. Clean HTML5 Path Navigation (No hash)
+  const handleNavigate = (view) => {
+    if (!VALID_VIEWS.includes(view)) return;
+    setActiveView(view);
+    localStorage.setItem('sentinel_active_view', view);
+    const targetPath = view === 'dashboard' ? '/' : `/${view}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ view }, '', targetPath);
+    }
+  };
+
+  // 3. Listen to browser Back and Forward navigation buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('?')[0].trim();
+      const currentView = VALID_VIEWS.includes(path) ? path : 'dashboard';
+      setActiveView(currentView);
+      localStorage.setItem('sentinel_active_view', currentView);
+    };
+
+    // Ensure clean URL without hash on mount
+    if (window.location.hash) {
+      const targetPath = activeView === 'dashboard' ? '/' : `/${activeView}`;
+      window.history.replaceState(null, '', targetPath);
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeView]);
 
   // Poll backend endpoints
   const fetchSurveillanceData = async () => {
@@ -67,6 +150,16 @@ export default function App() {
             activeStreamUrl={activeStreamUrl}
           />
         );
+      case 'registry':
+        return (
+          <CctvRegistryView 
+            onSelectCamera={(cam) => {
+              handleNavigate('camera-matrix');
+            }}
+          />
+        );
+      case 'video-wall':
+        return <VideoWallView />;
       case 'camera-matrix':
         return (
           <CameraMatrixView 
@@ -74,15 +167,17 @@ export default function App() {
               try {
                 await surveillanceService.setStreamSource(cam.id);
               } catch (e) {}
-              setActiveStreamUrl(`${API_BASE_URL}/api/video_feed?cam_id=${cam.id}&city=${encodeURIComponent(cam.city)}&t=${Date.now()}`);
-              setActiveView('dashboard');
+              const streamUrl = `${API_BASE_URL}/api/video_feed?cam_id=${cam.id}&city=${encodeURIComponent(cam.city)}&t=${Date.now()}`;
+              setActiveStreamUrl(streamUrl);
+              localStorage.setItem('sentinel_active_stream', streamUrl);
+              handleNavigate('dashboard');
             }} 
           />
         );
       case 'live-location':
         return (
           <LiveLocationView 
-            onSelectHub={() => setActiveView('camera-matrix')} 
+            onSelectHub={() => handleNavigate('camera-matrix')} 
           />
         );
       case 'gis-map':
@@ -102,7 +197,14 @@ export default function App() {
       case 'remote-nvr':
         return <RemoteNvrView />;
       default:
-        return <DashboardView stats={stats} detections={detections} liveAlerts={liveAlerts} />;
+        return (
+          <DashboardView 
+            stats={stats} 
+            detections={detections} 
+            liveAlerts={liveAlerts}
+            activeStreamUrl={activeStreamUrl}
+          />
+        );
     }
   };
 
@@ -117,10 +219,10 @@ export default function App() {
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar */}
+        {/* Left Sidebar with Clean HTML5 Routing */}
         <Sidebar 
           activeView={activeView} 
-          setActiveView={setActiveView} 
+          setActiveView={handleNavigate} 
           onLogout={() => alert("Officer Logged Out Successfully")}
         />
 

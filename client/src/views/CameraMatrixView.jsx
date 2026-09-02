@@ -36,13 +36,22 @@ export const SENTINEL_CAMERAS = [
 
 export const DISTRICTS = [
   { name: 'All Gujarat Grid', count: 30 },
-  { name: 'Ahmedabad', count: 1 },
+  { name: 'Ahmedabad', count: 9 },
+  { name: 'Junagadh', count: 5 },
+  { name: 'Rajkot', count: 2 },
+  { name: 'Gandhinagar', count: 2 },
+  { name: 'Gir Somnath', count: 1 },
+  { name: 'Navsari', count: 1 },
   { name: 'Surat', count: 1 },
   { name: 'Vadodara', count: 1 },
-  { name: 'Rajkot', count: 1 },
-  { name: 'Kutch', count: 3 },
-  { name: 'Devbhumi Dwarka', count: 2 },
-  { name: 'Gandhinagar', count: 1 },
+  { name: 'Mehsana', count: 1 },
+  { name: 'Devbhumi Dwarka', count: 1 },
+  { name: 'Kutch', count: 1 },
+  { name: 'Bhavnagar', count: 1 },
+  { name: 'Jamnagar', count: 1 },
+  { name: 'Anand', count: 1 },
+  { name: 'Bharuch', count: 1 },
+  { name: 'Statewide Patrol', count: 1 },
 ];
 
 export default function CameraMatrixView({ onSelectCamera }) {

@@ -19,5 +19,6 @@ if ROOT_DIR not in sys.path:
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
     host = os.environ.get("HOST", "0.0.0.0")
-    print(f"[*] Starting Sentinel Shield 2.4 AI Backend on http://{host}:{port}")
-    uvicorn.run("src.backend.main:app", host=host, port=port, reload=False, workers=1)
+    is_dev = os.environ.get("RENDER") is None
+    print(f"[*] Starting Sentinel Shield 2.4 AI Backend on http://{host}:{port} (Reload: {is_dev})")
+    uvicorn.run("src.backend.main:app", host=host, port=port, reload=is_dev, workers=1)
