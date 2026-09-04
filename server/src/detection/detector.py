@@ -10,6 +10,12 @@ from src.alerts.alert_engine import trigger_red_alert
 # Real-time circular buffer storing live detection logs for Dashboard & Sentinel Hub
 LIVE_DETECTIONS_LOG = collections.deque(maxlen=150)
 _TOTAL_OBJECTS_DETECTED = 0
+_DETECTION_SEQ = 0
+
+def generate_unique_detection_id(track_id: int = 0) -> str:
+    global _DETECTION_SEQ
+    _DETECTION_SEQ += 1
+    return f"{int(time.time() * 1000)}_{_DETECTION_SEQ}_{track_id}"
 
 CITY_RTO_MAP = {
     "ahmedabad": "GJ-01",
@@ -224,7 +230,7 @@ class SentinelDetector:
                             self.saved_track_ids.add(track_id)
                             _TOTAL_OBJECTS_DETECTED += 1
                             LIVE_DETECTIONS_LOG.appendleft({
-                                "id": int(time.time() * 1000) + track_id,
+                                "id": generate_unique_detection_id(track_id),
                                 "vehicle_type": "PEDESTRIAN",
                                 "plate_number": f"PEDESTRIAN-#{track_id:03d}",
                                 "timestamp": datetime.datetime.utcnow().isoformat(),
@@ -247,7 +253,7 @@ class SentinelDetector:
                             _TOTAL_OBJECTS_DETECTED += 1
                             generated_plate = generate_rto_plate(city=location_name, track_id=track_id, vehicle_type="BIKE")
                             LIVE_DETECTIONS_LOG.appendleft({
-                                "id": int(time.time() * 1000) + track_id,
+                                "id": generate_unique_detection_id(track_id),
                                 "vehicle_type": "BIKE",
                                 "plate_number": generated_plate,
                                 "timestamp": datetime.datetime.utcnow().isoformat(),
@@ -328,7 +334,7 @@ class SentinelDetector:
                             self.saved_track_ids.add(track_id)
                             _TOTAL_OBJECTS_DETECTED += 1
                             LIVE_DETECTIONS_LOG.appendleft({
-                                "id": int(time.time() * 1000) + track_id,
+                                "id": generate_unique_detection_id(track_id),
                                 "vehicle_type": display_name,
                                 "plate_number": effective_plate,
                                 "timestamp": datetime.datetime.utcnow().isoformat(),

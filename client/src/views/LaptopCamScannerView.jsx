@@ -755,9 +755,9 @@ export default function LaptopCamScannerView() {
             </div>
 
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {scanHistory.map((item) => (
+              {scanHistory.map((item, idx) => (
                 <div
-                  key={item.id}
+                  key={`audit-${item.id}-${item.plate}-${idx}`}
                   className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-mono transition ${
                     item.isAlert
                       ? 'bg-rose-950/30 border-rose-500/30 text-rose-300'

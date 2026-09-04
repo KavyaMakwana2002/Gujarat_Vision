@@ -152,7 +152,7 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
             {filteredDetections && filteredDetections.length > 0 ? (
               filteredDetections.slice(0, 25).map((d, i) => (
                 <div 
-                  key={d.id || i} 
+                  key={`det-${d.id || 'scan'}-${d.plate_number || 'plate'}-${i}`} 
                   className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/90 flex items-center justify-between hover:border-slate-700 transition hover:bg-slate-900/90"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 pr-2">
