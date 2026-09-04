@@ -14,7 +14,8 @@ import {
   LogOut,
   Building2,
   Grid,
-  Laptop
+  Laptop,
+  Smartphone
 } from 'lucide-react';
 
 export const NAV_ITEMS = [
@@ -31,7 +32,7 @@ export const NAV_ITEMS = [
   { id: 'all-alerts', label: '11. All Hotlist Alerts', icon: AlertTriangle, sub: 'eGujCop Red Alerts', badgeColor: 'text-red-400' },
   { id: 'stolen-cars', label: '12. Stolen Cars Register', icon: ShieldAlert, sub: 'VAHAN 4.0 Synced' },
   { id: 'blacklist-loc', label: '13. Blacklist GPS Tracker', icon: Crosshair, sub: 'Active Targets' },
-  { id: 'laptop-cam', label: '14. Laptop Camera ANPR', icon: Laptop, sub: 'Live Plate Scanner', highlight: true },
+  { id: 'laptop-cam', label: '14. Mobile & Web Cam ANPR', icon: Smartphone, sub: 'Phone Back Cam Scanner', highlight: true },
 ];
 
 export default function Sidebar({ activeView, setActiveView, onLogout }) {

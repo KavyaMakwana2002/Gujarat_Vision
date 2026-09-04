@@ -20,8 +20,12 @@ import {
   Activity,
   Eye,
   Upload,
-  Image as ImageIcon,
-  Check
+  Check,
+  SwitchCamera,
+  Smartphone,
+  RotateCw,
+  Sun,
+  Flashlight
 } from 'lucide-react';
 import { surveillanceService, API_BASE_URL } from '../services/api';
 
@@ -39,9 +43,14 @@ const QUICK_TEST_PLATES = [
 export default function LaptopCamScannerView() {
   const [cameraActive, setCameraActive] = useState(true);
   const [useBrowserCam, setUseBrowserCam] = useState(true);
+  const [facingMode, setFacingMode] = useState('environment'); // 'environment' (Back Camera) or 'user' (Front Camera)
+  const [availableDevices, setAvailableDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState('');
   const [streamError, setStreamError] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [torchActive, setTorchActive] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   
   const [currentResult, setCurrentResult] = useState({
     status: 'success',
@@ -102,6 +111,18 @@ export default function LaptopCamScannerView() {
   const mediaStreamRef = useRef(null);
   const scanIntervalRef = useRef(null);
 
+  // Enumerate all available camera devices on phone/laptop
+  const fetchCameraDevices = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(d => d.kind === 'videoinput');
+      setAvailableDevices(videoInputs);
+    } catch (e) {
+      console.warn("Device enumeration note:", e);
+    }
+  };
+
   // Play synthetic HUD sound effects
   const playBeep = (isAlert = false) => {
     if (!soundEnabled) return;
@@ -136,31 +157,59 @@ export default function LaptopCamScannerView() {
     }
   };
 
-  // Start local browser camera feed
-  const startBrowserCamera = async () => {
+  // Start mobile / web camera feed with selected facing mode (environment = back, user = front)
+  const startBrowserCamera = async (overrideFacing = null, overrideDeviceId = null) => {
     setStreamError(null);
+    const activeFacing = overrideFacing || facingMode;
+    const activeDevice = overrideDeviceId !== null ? overrideDeviceId : selectedDeviceId;
+
     try {
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(t => t.stop());
+        mediaStreamRef.current = null;
       }
+
+      const videoConstraints = activeDevice
+        ? { deviceId: { exact: activeDevice }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { facingMode: { ideal: activeFacing }, width: { ideal: 1280 }, height: { ideal: 720 } };
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user'
-        },
+        video: videoConstraints,
         audio: false
       });
+
       mediaStreamRef.current = stream;
+
+      // Check if phone torch / flashlight is supported
+      const track = stream.getVideoTracks()[0];
+      if (track && track.getCapabilities) {
+        const caps = track.getCapabilities();
+        setTorchSupported(!!caps.torch);
+      } else {
+        setTorchSupported(false);
+      }
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => console.warn(e));
+        videoRef.current.play().catch(e => console.warn("Video play error:", e));
       }
       setCameraActive(true);
+      fetchCameraDevices();
     } catch (err) {
       console.error("Camera access error:", err);
-      setStreamError("Could not access laptop webcam. Please allow camera permissions in your browser.");
-      setUseBrowserCam(false);
+      // Fallback: try standard camera request without strict facing constraints
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        mediaStreamRef.current = fallbackStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          videoRef.current.play().catch(() => {});
+        }
+        setCameraActive(true);
+      } catch (fallbackErr) {
+        setStreamError("Could not access camera. Please allow camera permissions in browser.");
+        setUseBrowserCam(false);
+      }
     }
   };
 
@@ -174,6 +223,34 @@ export default function LaptopCamScannerView() {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
+    setTorchActive(false);
+  };
+
+  // Toggle Flip Camera (Phone Back Camera vs Front Camera)
+  const toggleCameraFacing = () => {
+    const nextFacing = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(nextFacing);
+    setSelectedDeviceId('');
+    if (cameraActive && useBrowserCam) {
+      startBrowserCamera(nextFacing, '');
+    }
+  };
+
+  // Toggle Torch / Flashlight on mobile device
+  const toggleTorch = async () => {
+    if (!mediaStreamRef.current) return;
+    const track = mediaStreamRef.current.getVideoTracks()[0];
+    if (track && track.applyConstraints) {
+      try {
+        const nextState = !torchActive;
+        await track.applyConstraints({
+          advanced: [{ torch: nextState }]
+        });
+        setTorchActive(nextState);
+      } catch (e) {
+        console.warn("Torch constraint error:", e);
+      }
+    }
   };
 
   useEffect(() => {
@@ -192,8 +269,8 @@ export default function LaptopCamScannerView() {
     setIsScanning(true);
     try {
       let payload = {
-        camera_id: 'LAPTOP-CAM',
-        location: 'Laptop Direct ANPR Station'
+        camera_id: facingMode === 'environment' ? 'MOBILE-BACK-CAM' : 'MOBILE-FRONT-CAM',
+        location: 'Mobile & Web ANPR Field Unit'
       };
       
       if (manualPlate) {
@@ -284,17 +361,17 @@ export default function LaptopCamScannerView() {
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-inner">
-              <Camera className="w-5 h-5 animate-pulse" />
+              <Smartphone className="w-5 h-5 animate-pulse text-cyan-300" />
             </span>
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-white font-mono tracking-wide flex items-center gap-2">
-                14. Laptop Camera Live ANPR & Photo OCR Scanner
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  ONLINE
+                14. Mobile & Web Camera ANPR Scanner
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                  PHONE BACK CAMERA READY
                 </span>
               </h1>
               <p className="text-xs text-slate-400 font-mono">
-                Hold vehicle number plate or upload any vehicle photo for real-time OCR text extraction and eGujCop Hotlist check.
+                Use smartphone back camera, laptop webcam, or upload photos to scan vehicle number plates in real-time.
               </p>
             </div>
           </div>
@@ -302,6 +379,34 @@ export default function LaptopCamScannerView() {
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          
+          {/* Flip / Switch Camera Button (Front / Back) */}
+          <button
+            onClick={toggleCameraFacing}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 transition shadow-sm font-bold"
+            title="Switch between Phone Back Camera and Front Selfie Camera"
+          >
+            <SwitchCamera className="w-4 h-4 text-cyan-400" />
+            <span>{facingMode === 'environment' ? '📷 Back Camera (Rear)' : '🤳 Front Camera (Selfie)'}</span>
+          </button>
+
+          {/* Flashlight / Torch for Mobile (if supported) */}
+          {torchSupported && (
+            <button
+              onClick={toggleTorch}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition ${
+                torchActive 
+                  ? 'bg-amber-500 text-black border-amber-400 font-bold shadow-lg shadow-amber-500/30' 
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+              title="Toggle Phone Flashlight"
+            >
+              <Sun className="w-4 h-4" />
+              <span>{torchActive ? 'Flash ON' : 'Flash OFF'}</span>
+            </button>
+          )}
+
+          {/* Sound FX Toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition ${
@@ -315,14 +420,7 @@ export default function LaptopCamScannerView() {
             <span>{soundEnabled ? 'Sound ON' : 'Muted'}</span>
           </button>
 
-          <button
-            onClick={() => setUseBrowserCam(!useBrowserCam)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
-          >
-            <Radio className="w-4 h-4 text-blue-400" />
-            <span>{useBrowserCam ? 'Mode: Webcam HD' : 'Mode: DirectShow'}</span>
-          </button>
-
+          {/* Camera ON / OFF Toggle */}
           {cameraActive ? (
             <button
               onClick={() => {
@@ -332,7 +430,7 @@ export default function LaptopCamScannerView() {
               className="flex items-center gap-1.5 px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded-xl font-bold transition shadow-lg shadow-rose-600/10"
             >
               <CameraOff className="w-4 h-4" />
-              <span>Turn OFF Camera</span>
+              <span>Turn OFF</span>
             </button>
           ) : (
             <button
@@ -344,7 +442,7 @@ export default function LaptopCamScannerView() {
               className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition shadow-lg shadow-emerald-600/20"
             >
               <Camera className="w-4 h-4" />
-              <span>Turn ON Camera</span>
+              <span>Turn ON</span>
             </button>
           )}
         </div>
@@ -365,20 +463,21 @@ export default function LaptopCamScannerView() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover -scale-x-100"
+                  /* IMPORTANT: Only mirror front selfie camera; DO NOT mirror phone back camera so plate text is readable! */
+                  className={`w-full h-full object-cover ${facingMode === 'user' ? '-scale-x-100' : 'scale-x-100'}`}
                 />
               ) : (
                 <img
                   src={`${API_BASE_URL}/api/video_feed?cam_id=webcam&t=${Date.now()}`}
-                  alt="Laptop Stream"
+                  alt="Camera Stream"
                   className="w-full h-full object-cover"
-                  onError={() => setStreamError("Cannot connect to backend DirectShow stream. Switch to Webcam HD mode.")}
+                  onError={() => setStreamError("Cannot connect to backend stream. Switch to Mobile / Browser mode.")}
                 />
               )
             ) : (
               <div className="text-center p-8 space-y-3">
                 <CameraOff className="w-12 h-12 text-slate-600 mx-auto animate-pulse" />
-                <p className="text-slate-400 font-mono text-sm font-semibold">Laptop Camera is Currently Off</p>
+                <p className="text-slate-400 font-mono text-sm font-semibold">Camera is Currently Off</p>
                 <button
                   onClick={() => {
                     startBrowserCamera();
@@ -386,7 +485,7 @@ export default function LaptopCamScannerView() {
                   }}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-mono text-xs font-bold transition"
                 >
-                  Activate Camera Hardware
+                  Activate Phone / Web Camera
                 </button>
               </div>
             )}
@@ -396,32 +495,32 @@ export default function LaptopCamScannerView() {
               <>
                 {/* Top Status Badges */}
                 <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                  <div className="flex items-center gap-2 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono text-blue-300">
+                  <div className="flex items-center gap-2 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono text-blue-300">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>LAPTOP SENSOR • READY</span>
+                    <span>{facingMode === 'environment' ? '📱 REAR / BACK SENSOR' : '🤳 FRONT SENSOR'}</span>
                   </div>
-                  <div className="flex items-center gap-2 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-500/30 text-xs font-mono text-cyan-300">
+                  <div className="flex items-center gap-2 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-cyan-500/30 text-xs font-mono text-cyan-300">
                     <Activity className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
-                    <span>ANPR OCR ENGINE READY</span>
+                    <span>OCR ANPR ACTIVE</span>
                   </div>
                 </div>
 
                 {/* Laser Scanning Reticle */}
-                <div className="absolute inset-x-12 inset-y-10 border-2 border-dashed border-cyan-500/40 rounded-2xl pointer-events-none flex flex-col justify-between p-3">
+                <div className="absolute inset-x-8 sm:inset-x-12 inset-y-8 sm:inset-y-10 border-2 border-dashed border-cyan-500/40 rounded-2xl pointer-events-none flex flex-col justify-between p-3">
                   <div className="flex justify-between">
                     <div className="w-6 h-6 border-t-2 border-l-2 border-cyan-400" />
                     <div className="w-6 h-6 border-t-2 border-r-2 border-cyan-400" />
                   </div>
 
                   {/* Center Target Box */}
-                  <div className="relative mx-auto w-4/5 h-28 border-2 border-emerald-400/80 bg-emerald-500/5 rounded-xl flex flex-col items-center justify-center text-center p-2 shadow-inner">
+                  <div className="relative mx-auto w-11/12 sm:w-4/5 h-28 border-2 border-emerald-400/80 bg-emerald-500/5 rounded-xl flex flex-col items-center justify-center text-center p-2 shadow-inner">
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent animate-pulse" />
                     <Scan className="w-6 h-6 text-emerald-300 animate-bounce mb-1" />
                     <span className="text-[11px] font-mono font-bold text-emerald-300 tracking-wider">
-                      HOLD NUMBER PLATE INSIDE TARGET BOX
+                      POINT REAR CAMERA AT VEHICLE NUMBER PLATE
                     </span>
                     <span className="text-[9px] font-mono text-slate-300">
-                      High-Precision OCR converts image to text instantly
+                      Auto-extracts plate text and checks eGujCop & VAHAN databases
                     </span>
                   </div>
 
@@ -431,8 +530,16 @@ export default function LaptopCamScannerView() {
                   </div>
                 </div>
 
-                {/* Manual Trigger Button on Bottom Bar */}
-                <div className="absolute bottom-4 inset-x-0 flex justify-center">
+                {/* Manual Trigger & Flip Button on Bottom Bar */}
+                <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-2 px-4">
+                  <button
+                    onClick={toggleCameraFacing}
+                    className="p-2.5 rounded-full bg-black/70 hover:bg-black text-cyan-300 border border-cyan-500/40 backdrop-blur-md transition active:scale-95 shadow-lg"
+                    title="Flip Camera"
+                  >
+                    <SwitchCamera className="w-4 h-4" />
+                  </button>
+
                   <button
                     onClick={() => handleCaptureAndScan()}
                     disabled={isScanning}
@@ -450,10 +557,10 @@ export default function LaptopCamScannerView() {
                 <AlertTriangle className="w-10 h-10 text-amber-400" />
                 <p className="text-slate-300 font-mono text-xs">{streamError}</p>
                 <button
-                  onClick={startBrowserCamera}
+                  onClick={() => startBrowserCamera()}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-mono font-bold"
                 >
-                  Retry Camera
+                  Retry Camera Permission
                 </button>
               </div>
             )}
@@ -631,7 +738,7 @@ export default function LaptopCamScannerView() {
               <div className="p-8 text-center space-y-2 border border-dashed border-slate-800 rounded-2xl">
                 <Eye className="w-8 h-8 text-slate-600 mx-auto animate-pulse" />
                 <p className="text-slate-400 font-mono text-xs">
-                  No plate detected in current frame. Hold number plate in front of webcam, upload a photo, or click test buttons above.
+                  No plate detected in current frame. Point rear camera at number plate, upload a photo, or click test buttons above.
                 </p>
               </div>
             )}
