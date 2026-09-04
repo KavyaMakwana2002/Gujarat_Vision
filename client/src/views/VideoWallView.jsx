@@ -3,6 +3,7 @@ import {
   Grid, 
   Layers, 
   Maximize2, 
+  LayoutGrid,
   RefreshCw, 
   Radio, 
   Shield, 
@@ -18,7 +19,7 @@ import { API_BASE_URL } from '../services/api';
 export default function VideoWallView() {
   const [layout, setLayout] = useState('2x2'); // '2x2' or '3x3'
   
-  // Available Camera Sources (System 1: Sentinel Grid, System 2: Remote Shop NVR)
+  // Available Camera Sources (Sentinel Grid)
   const availableSources = [
     { id: 'cam01', name: 'CAM01: Chiman bhai Bridge (Ahmedabad)', type: 'Sentinel Grid' },
     { id: 'cam02', name: 'CAM02: Janpath (Ahmedabad)', type: 'Sentinel Grid' },
@@ -31,8 +32,7 @@ export default function VideoWallView() {
     { id: 'cam17', name: 'CAM17: Rajkot Bus Port CCTV (Rajkot)', type: 'Sentinel Grid' },
     { id: 'cam19', name: 'CAM19: Khaparia Panchayat (Navsari)', type: 'Sentinel Grid' },
     { id: 'cam21', name: 'CAM21: Surat Ring Road Node (Surat)', type: 'Sentinel Grid' },
-    { id: 'cam22', name: 'CAM22: Vadodara Sayajigunj Tower', type: 'Sentinel Grid' },
-    { id: 'remote-shop-nvr', name: 'SHOP-NVR: COREPRIX 5MP IP Cam (Remote Network)', type: 'Private NVR' }
+    { id: 'cam22', name: 'CAM22: Vadodara Sayajigunj Tower', type: 'Sentinel Grid' }
   ];
 
   // Tile assignments
@@ -40,7 +40,7 @@ export default function VideoWallView() {
     'cam01',
     'cam02',
     'cam06',
-    'remote-shop-nvr',
+    'cam03',
     'cam04',
     'cam05',
     'cam12',
@@ -61,9 +61,6 @@ export default function VideoWallView() {
   };
 
   const getTileStreamUrl = (feedId) => {
-    if (feedId === 'remote-shop-nvr') {
-      return `${API_BASE_URL}/api/remote_nvr/video_feed?key=${refreshKeys}`;
-    }
     return `${API_BASE_URL}/api/video_feed?cam_id=${feedId}&t=${refreshKeys}`;
   };
 
@@ -73,49 +70,58 @@ export default function VideoWallView() {
     <div className="space-y-4">
       {/* Top Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 shadow-xl">
-        <div>
-          <h1 className="text-xl font-extrabold text-white flex items-center gap-2">
-            <Grid className="w-5 h-5 text-blue-400" /> Tactical Command Video Wall (Multi-VMS Unified Viewer)
-          </h1>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
-            Simultaneous multi-camera grid aggregating live feeds from Sentinel Government Grid & Remote Private NVRs
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+            <Grid className="w-6 h-6 text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              Multi-VMS Surveillance Video Wall
+              <span className="text-[11px] font-mono font-normal bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                LIVE SYNC
+              </span>
+            </h2>
+            <p className="text-xs text-slate-400">
+              Simultaneous multi-camera grid aggregating live feeds from Sentinel Government Grid
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           {/* Layout Selector */}
-          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-700 text-xs font-mono">
+          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
             <button
               onClick={() => setLayout('2x2')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                layout === '2x2' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                layout === '2x2' 
+                  ? 'bg-blue-600 text-white shadow' 
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              2x2 Grid (4 Feeds)
+              <LayoutGrid className="w-3.5 h-3.5" />
+              2x2 Grid (4 Cams)
             </button>
             <button
               onClick={() => setLayout('3x3')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                layout === '3x3' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                layout === '3x3' 
+                  ? 'bg-blue-600 text-white shadow' 
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              3x3 Matrix (9 Feeds)
+              <Maximize2 className="w-3.5 h-3.5" />
+              3x3 Wall (9 Cams)
             </button>
           </div>
 
           <button
             onClick={handleRefreshAll}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-mono font-bold transition border border-slate-700"
-            title="Sync all stream feeds"
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs flex items-center gap-1 transition"
+            title="Reload Video Streams"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Sync Feeds</span>
+            <RefreshCw className="w-4 h-4" />
           </button>
-
-          <span className="text-xs font-mono px-3 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold flex items-center gap-1.5">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
-            MULTI-VMS SYNCHRONIZED
-          </span>
         </div>
       </div>
 
@@ -127,7 +133,6 @@ export default function VideoWallView() {
       }`}>
         {tileFeeds.slice(0, numTiles).map((feedId, idx) => {
           const currentSource = availableSources.find(s => s.id === feedId) || availableSources[0];
-          const isPrivateNvr = feedId === 'remote-shop-nvr';
 
           return (
             <div 
@@ -137,9 +142,7 @@ export default function VideoWallView() {
               {/* Tile Header */}
               <div className="bg-slate-950/80 px-3 py-2 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
-                  <span className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] shrink-0 ${
-                    isPrivateNvr ? 'bg-cyan-500/20 text-cyan-400' : 'bg-blue-500/20 text-blue-400'
-                  }`}>
+                  <span className="w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] shrink-0 bg-blue-500/20 text-blue-400">
                     #{idx + 1}
                   </span>
 
@@ -157,12 +160,8 @@ export default function VideoWallView() {
                   </select>
                 </div>
 
-                <span className={`text-[9px] px-2 py-0.5 rounded font-bold border shrink-0 ${
-                  isPrivateNvr 
-                    ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' 
-                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                }`}>
-                  {isPrivateNvr ? 'ONVIF 5MP NVR' : 'TCP LOCKED'}
+                <span className="text-[9px] px-2 py-0.5 rounded font-bold border shrink-0 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                  {currentSource.type || 'ONLINE'}
                 </span>
               </div>
 

@@ -119,16 +119,16 @@ class GovernmentCameraGateway:
             ("cam18", "Rajkot CCTV", "Rajkot", "H.264"),
             ("cam19", "KHAPARIA GRAM PANCHAYAT , TALUKA GANDEVI, DISTRICT NAVSARI", "Navsari", "H.264"),
             ("cam20", "Mohanpura", "Ahmedabad", "H.264"),
-            ("cam21", "Surat Ring Road Node", "Surat", "H.264"),
-            ("cam22", "Vadodara Sayajigunj Tower", "Vadodara", "H.264"),
-            ("cam23", "Mehsana Modhera Circle", "Mehsana", "H.264"),
-            ("cam24", "Dwarka Coastal Highway Post", "Devbhumi Dwarka", "H.264"),
-            ("cam25", "Bhuj Border Highway Node", "Kutch", "H.264"),
-            ("cam26", "Bhavnagar Ghogha Circle", "Bhavnagar", "H.264"),
-            ("cam27", "Jamnagar Port Road", "Jamnagar", "H.264"),
-            ("cam28", "Anand Expressway Toll Plaza", "Anand", "H.264"),
-            ("cam29", "Bharuch Narmada Bridge Gate", "Bharuch", "H.264"),
-            ("cam30", "Gujarat State Highway Patrol Node", "Statewide", "H.264"),
+            ("cam21", "Patan Dethali Char Rasta", "Patan", "H.264"),
+            ("cam22", "BK Mervada tran Rasta", "Banaskantha", "H.264"),
+            ("cam23", "kheram", "Kheram", "H.264"),
+            ("cam24", "dehgam", "Gandhinagar", "H.264"),
+            ("cam25", "dhanori", "Navsari", "H.264"),
+            ("cam26", "TANKAL", "Navsari", "H.264"),
+            ("cam27", "bilimora", "Navsari", "H.264"),
+            ("cam28", "bilimora", "Navsari", "H.264"),
+            ("cam29", "bilimora", "Navsari", "H.264"),
+            ("cam30", "Gandhidham Rambaugh p2", "Kutch", "H.264"),
         ]
 
         self.cameras = [
@@ -142,7 +142,7 @@ class GovernmentCameraGateway:
                 "resolution": "1920x1080",
                 "fps": 30.0,
                 "live": True,
-                "rtsp_url": f"rtsp://{sentinel_ip}:8554/stream/{cam_id}",
+                "rtsp_url": f"rtsp://kavyamak11%40gmail.com:X64V-9ZAQ-T5AN@{sentinel_ip}:8554/stream/{cam_id}",
                 "whep_url": f"http://{sentinel_ip}:8889/stream/{cam_id}/whep",
                 "hls_url": f"https://{cdn_host}/{cam_id}/index.m3u8"
             }

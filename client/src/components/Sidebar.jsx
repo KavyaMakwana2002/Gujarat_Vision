@@ -13,23 +13,25 @@ import {
   Network,
   LogOut,
   Building2,
-  Grid
+  Grid,
+  Laptop
 } from 'lucide-react';
 
 export const NAV_ITEMS = [
   { id: 'dashboard', label: '1. Mission Control', icon: LayoutDashboard, sub: 'Live Feed & Metrics' },
   { id: 'registry', label: '2. Centralised CCTV Registry', icon: Building2, sub: 'Bulk Import & Gap Analysis', highlight: true },
-  { id: 'video-wall', label: '3. Multi-VMS Video Wall', icon: Grid, sub: '2x2 & 3x3 Live Matrix', highlight: true },
-  { id: 'camera-matrix', label: '4. Sentinel Camera Grid', icon: Camera, sub: '30 Operational Nodes' },
-  { id: 'gis-map', label: '5. Real GIS Command Map', icon: Map, sub: 'GPS Operational Pins' },
-  { id: 'live-location', label: '6. Live Location Hubs', icon: MapPin, sub: 'City Junctions' },
-  { id: 'vehicle-details', label: '7. Vehicle Details', icon: Car, sub: 'Specs & Registrations' },
-  { id: 'vehicle-search', label: '8. Vehicle Search', icon: Search, sub: 'ANPR Quick Lookup' },
-  { id: 'record-video', label: '9. Record & Evidence', icon: Disc, sub: 'Incident Clips' },
-  { id: 'all-alerts', label: '10. All Hotlist Alerts', icon: AlertTriangle, sub: 'eGujCop Red Alerts', badgeColor: 'text-red-400' },
-  { id: 'stolen-cars', label: '11. Stolen Cars Register', icon: ShieldAlert, sub: 'VAHAN 4.0 Synced' },
-  { id: 'blacklist-loc', label: '12. Blacklist GPS Tracker', icon: Crosshair, sub: 'Active Targets' },
-  { id: 'remote-nvr', label: '13. Remote Shop NVR', icon: Network, sub: 'COREPRIX 5MP / VPN' },
+  { id: 'vms-federation', label: '3. VMS Federation Hub', icon: Network, sub: 'Model 3 Interoperability', highlight: true },
+  { id: 'video-wall', label: '4. Multi-VMS Video Wall', icon: Grid, sub: '2x2 & 3x3 Live Matrix', highlight: true },
+  { id: 'camera-matrix', label: '5. Sentinel Camera Grid', icon: Camera, sub: '30 Operational Nodes' },
+  { id: 'gis-map', label: '6. Real GIS Command Map', icon: Map, sub: 'GPS Operational Pins' },
+  { id: 'live-location', label: '7. Live Location Hubs', icon: MapPin, sub: 'City Junctions' },
+  { id: 'vehicle-details', label: '8. Vehicle Details', icon: Car, sub: 'Specs & Registrations' },
+  { id: 'vehicle-search', label: '9. Vehicle Search', icon: Search, sub: 'ANPR Quick Lookup' },
+  { id: 'record-video', label: '10. Record & Evidence', icon: Disc, sub: 'Incident Clips' },
+  { id: 'all-alerts', label: '11. All Hotlist Alerts', icon: AlertTriangle, sub: 'eGujCop Red Alerts', badgeColor: 'text-red-400' },
+  { id: 'stolen-cars', label: '12. Stolen Cars Register', icon: ShieldAlert, sub: 'VAHAN 4.0 Synced' },
+  { id: 'blacklist-loc', label: '13. Blacklist GPS Tracker', icon: Crosshair, sub: 'Active Targets' },
+  { id: 'laptop-cam', label: '14. Laptop Camera ANPR', icon: Laptop, sub: 'Live Plate Scanner', highlight: true },
 ];
 
 export default function Sidebar({ activeView, setActiveView, onLogout }) {

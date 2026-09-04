@@ -555,13 +555,27 @@ export default function CctvRegistryView({ onSelectCamera }) {
                         </span>
                       </td>
                       <td className="p-3.5 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => onSelectCamera && onSelectCamera({
+                            id: (cam.camera_id || 'cam01').toLowerCase(),
+                            name: cam.name,
+                            city: cam.city,
+                            codec: cam.codec,
+                            res: cam.resolution
+                          })}
+                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold font-mono transition inline-flex items-center gap-1 shadow-sm mr-1.5"
+                          title="Stream to AI Mission Control"
+                        >
+                          <Eye className="w-3 h-3" /> Stream to AI
+                        </button>
                         <a
                           href={cam.hls_url || `https://cctv.corp8.cloud/${cam.camera_id.toLowerCase()}/index.m3u8`}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1 mr-1"
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1"
+                          title="Open HLS Feed"
                         >
-                          <Eye className="w-3 h-3" /> View
+                          HLS
                         </a>
                       </td>
                     </tr>

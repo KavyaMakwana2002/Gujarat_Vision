@@ -29,7 +29,8 @@ api.interceptors.request.use((config) => {
 export const surveillanceService = {
   // Stats & Ingestion
   getStats: () => api.get('/api/stats'),
-  getDetections: () => api.get('/api/detections'),
+  getDetections: (params) => api.get('/api/detections', { params }),
+  getLiveDetections: (params) => api.get('/api/detections/live', { params }),
   getLiveAlerts: () => api.get('/api/alerts/live'),
   getWatchlist: () => api.get('/api/watchlist'),
   
@@ -41,9 +42,8 @@ export const surveillanceService = {
   getIngestCatalogue: () => api.get('/api/ingest'),
   connectGateway: (host) => api.post('/api/gateway/connect', { host }),
 
-  // Remote NVR (COREPRIX / VPN)
-  getRemoteNVRStatus: () => api.get('/api/remote_nvr/status'),
-  configureRemoteNVR: (config) => api.post('/api/remote_nvr/configure', config),
+  // Laptop Camera Live ANPR Scanner
+  scanFrame: (payload) => api.post('/api/scanner/ocr_frame', payload),
 
   // Centralised CCTV Registry & GIS Mapping Model
   getRegistryCameras: (params) => api.get('/api/registry/cameras', { params }),
@@ -51,6 +51,14 @@ export const surveillanceService = {
   bulkImportCameras: (cameras) => api.post('/api/registry/bulk_import', { cameras }),
   getGapAnalysisReport: () => api.get('/api/registry/gap_analysis'),
   getExportRegistryUrl: () => `${API_BASE_URL}/api/registry/export`,
+
+  // Model 3: VMS Federation & Middleware Integration Layer
+  getFederationOverview: () => api.get('/api/federation/overview'),
+  getFederatedSystems: () => api.get('/api/federation/systems'),
+  getFederatedEvents: (params) => api.get('/api/federation/events', { params }),
+  getCrossSystemCorrelations: () => api.get('/api/federation/correlations'),
+  onboardVmsAdapter: (adapterData) => api.post('/api/federation/onboard_adapter', adapterData),
+  getFederatedAnalyticsReport: () => api.get('/api/federation/analytics_report'),
 
   // Auth
   login: (username, password) => api.post('/api/auth/login', { username, password }),

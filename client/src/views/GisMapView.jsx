@@ -1,440 +1,363 @@
 import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { 
-  Map as MapIcon, 
-  Shield, 
-  Radio, 
-  MapPin, 
-  Layers, 
-  Navigation, 
-  Video, 
-  ExternalLink,
-  CheckCircle2, 
-  Key,
-  Eye,
-  EyeOff,
-  Play
-} from 'lucide-react';
-import { surveillanceService, API_BASE_URL } from '../services/api';
+import { X, Shield, MapPin, Radio, Eye, Camera, Sun, Layers } from 'lucide-react';
+import { API_BASE_URL } from '../services/api';
+import { SENTINEL_CAMERAS } from './CameraMatrixView';
 
-// 30 Real Sentinel Camera Grid Nodes with Precise Gujarat Geo-Coordinates
-export const SENTINEL_GRID_GIS = [
-  { id: "cam01", name: "Chiman bhai Bridge", city: "Ahmedabad", lat: 23.0645, lng: 72.5855, type: "Overpass Bridge CCTV", codec: "H.264" },
-  { id: "cam02", name: "Janpath", city: "Ahmedabad", lat: 23.0360, lng: 72.5645, type: "Arterial Junction Post", codec: "H.264" },
-  { id: "cam03", name: "O.N.G.C. Office", city: "Ahmedabad", lat: 23.1118, lng: 72.5830, type: "Institutional Security", codec: "H.264" },
-  { id: "cam04", name: "Paldi Circle", city: "Ahmedabad", lat: 23.0125, lng: 72.5620, type: "Urban Traffic Circle", codec: "H.264" },
-  { id: "cam05", name: "Visat teen Rasta", city: "Ahmedabad", lat: 23.0970, lng: 72.5890, type: "Sabarmati Tri-Junction", codec: "H.264" },
-  { id: "cam06", name: "Timbavadi gate-Junagadh", city: "Junagadh", lat: 21.5050, lng: 70.4480, type: "City Entry Gate", codec: "H.264" },
-  { id: "cam07", name: "hero-showroom-gir-somnath", city: "Gir Somnath", lat: 20.9025, lng: 70.3645, type: "Commercial Highway Post", codec: "H.264" },
-  { id: "cam08", name: "majewadi-gate-junagadh", city: "Junagadh", lat: 21.5280, lng: 70.4610, type: "Historic Checkpost Gate", codec: "H.264" },
-  { id: "cam09", name: "new-bypass-near-by-circle-junagadh-2", city: "Junagadh", lat: 21.5420, lng: 70.4720, type: "Highway Bypass Circle", codec: "H.264" },
-  { id: "cam10", name: "char-chowk-road-2-junagadh", city: "Junagadh", lat: 21.5210, lng: 70.4590, type: "Central Four-Ways", codec: "H.264" },
-  { id: "cam11", name: "dolatpara-junagadh", city: "Junagadh", lat: 21.5510, lng: 70.4780, type: "GIDC Industrial Highway", codec: "H.264" },
-  { id: "cam12", name: "Tri Mandir Adalaj Tollnaka", city: "Gandhinagar", lat: 23.1810, lng: 72.5695, type: "Toll Plaza Highway Node", codec: "H.264" },
-  { id: "cam13", name: "CN Vidhyalaya", city: "Ahmedabad", lat: 23.0230, lng: 72.5480, type: "Ambawadi Urban Corridor", codec: "H.264" },
-  { id: "cam14", name: "Delight RLVD", city: "Ahmedabad", lat: 23.0450, lng: 72.5180, type: "Red Light Violation Detection", codec: "H.264" },
-  { id: "cam15", name: "Suvidha park", city: "Ahmedabad", lat: 23.0310, lng: 72.5320, type: "Satellite Residential Post", codec: "H.264" },
-  { id: "cam16", name: "Visat P2", city: "Ahmedabad", lat: 23.1020, lng: 72.5910, type: "Chandkheda Secondary Post", codec: "H.264" },
-  { id: "cam17", name: "Rajkot Bus Port CCTV", city: "Rajkot", lat: 22.3040, lng: 70.8030, type: "Transit Terminal Surveillance", codec: "H.264" },
-  { id: "cam18", name: "Rajkot CCTV", city: "Rajkot", lat: 22.2980, lng: 70.7990, type: "Downtown Trikon Baug", codec: "H.264" },
-  { id: "cam19", name: "KHAPARIA GRAM PANCHAYAT , TALUKA GANDEVI, DISTRICT NAVSARI", city: "Navsari", lat: 20.8140, lng: 72.9810, type: "Panchayat Security Post", codec: "H.264" },
-  { id: "cam20", name: "Mohanpura", city: "Ahmedabad", lat: 23.0305, lng: 72.5990, type: "Kalupur Station Approach", codec: "H.264" },
-  { id: "cam21", name: "Surat Ring Road Node", city: "Surat", lat: 21.1820, lng: 72.8250, type: "Majura Gate Corridor", codec: "H.264" },
-  { id: "cam22", name: "Vadodara Sayajigunj Tower", city: "Vadodara", lat: 22.3110, lng: 73.1860, type: "Sayajigunj Central Node", codec: "H.264" },
-  { id: "cam23", name: "Mehsana Modhera Circle", city: "Mehsana", lat: 23.5930, lng: 72.3780, type: "State Highway 41 Node", codec: "H.264" },
-  { id: "cam24", name: "Dwarka Coastal Highway Post", city: "Devbhumi Dwarka", lat: 22.2380, lng: 68.9660, type: "Coastal Border Watch", codec: "H.264" },
-  { id: "cam25", name: "Bhuj Border Highway Node", city: "Kutch", lat: 23.2450, lng: 69.6920, type: "Kutch Border Transit Corridor", codec: "H.264" },
-  { id: "cam26", name: "Bhavnagar Ghogha Circle", city: "Bhavnagar", lat: 21.7640, lng: 72.1480, type: "Ghogha Port Circle", codec: "H.264" },
-  { id: "cam27", name: "Jamnagar Port Road", city: "Jamnagar", lat: 22.4680, lng: 70.0580, type: "Digjam Industrial Corridor", codec: "H.264" },
-  { id: "cam28", name: "Anand Expressway Toll Plaza", city: "Anand", lat: 22.5620, lng: 72.9510, type: "NE-1 Toll Plaza Post", codec: "H.264" },
-  { id: "cam29", name: "Bharuch Narmada Bridge Gate", city: "Bharuch", lat: 21.7050, lng: 72.9980, type: "Golden Bridge River Post", codec: "H.264" },
-  { id: "cam30", name: "Gujarat State Highway Patrol Node", city: "Gandhinagar", lat: 23.2230, lng: 72.6510, type: "State HQ Inter-District Grid", codec: "H.264" },
-];
+export const SENTINEL_GRID_GIS = SENTINEL_CAMERAS;
 
-export default function GisMapView({ onStreamToAi }) {
-  const mapElementRef = useRef(null);
-  const mapInstanceRef = useRef(null);
+// Exact GPS coordinates for each of the 30 camera locations
+const CAMERA_COORDS = {
+  cam01: { lat: 23.0505, lng: 72.5518, name: "Chiman bhai Bridge",        city: "Ahmedabad" },
+  cam02: { lat: 23.0267, lng: 72.5714, name: "Janpath",                    city: "Ahmedabad" },
+  cam03: { lat: 23.0225, lng: 72.5714, name: "O.N.G.C. Office",            city: "Ahmedabad" },
+  cam04: { lat: 23.0098, lng: 72.5626, name: "Paldi Circle",               city: "Ahmedabad" },
+  cam05: { lat: 23.0997, lng: 72.5512, name: "Visat teen Rasta",           city: "Ahmedabad" },
+  cam06: { lat: 21.5252, lng: 70.4580, name: "Timbavadi gate-Junagadh",   city: "Junagadh"  },
+  cam07: { lat: 20.9000, lng: 70.3700, name: "hero-showroom-gir-somnath", city: "Gir Somnath"},
+  cam08: { lat: 21.5220, lng: 70.4558, name: "majewadi-gate-junagadh",    city: "Junagadh"  },
+  cam09: { lat: 21.5350, lng: 70.4670, name: "new-bypass-junagadh-2",     city: "Junagadh"  },
+  cam10: { lat: 21.5180, lng: 70.4620, name: "char-chowk-road-2-junagadh",city: "Junagadh"  },
+  cam11: { lat: 21.5300, lng: 70.4590, name: "dolatpara-junagadh",        city: "Junagadh"  },
+  cam12: { lat: 23.1620, lng: 72.5852, name: "Tri Mandir Adalaj Tollnaka", city: "Gandhinagar"},
+  cam13: { lat: 23.0150, lng: 72.5680, name: "CN Vidhyalaya",             city: "Ahmedabad" },
+  cam14: { lat: 23.0320, lng: 72.5770, name: "Delight RLVD",              city: "Ahmedabad" },
+  cam15: { lat: 23.0480, lng: 72.5870, name: "Suvidha park",              city: "Ahmedabad" },
+  cam16: { lat: 23.1020, lng: 72.5590, name: "Visat P2",                  city: "Ahmedabad" },
+  cam17: { lat: 22.3070, lng: 70.8020, name: "Rajkot Bus Port CCTV",     city: "Rajkot"    },
+  cam18: { lat: 22.3000, lng: 70.7880, name: "Rajkot CCTV",              city: "Rajkot"    },
+  cam19: { lat: 20.7890, lng: 72.9250, name: "KHAPARIA Gram Panchayat – Navsari", city: "Navsari" },
+  cam20: { lat: 23.0380, lng: 72.5850, name: "Mohanpura",                 city: "Ahmedabad" },
+  cam21: { lat: 23.8490, lng: 72.1160, name: "Patan Dethali Char Rasta", city: "Patan"     },
+  cam22: { lat: 24.1750, lng: 72.4260, name: "BK Mervada tran Rasta",    city: "Banaskantha"},
+  cam23: { lat: 23.5880, lng: 72.3260, name: "kheram",                    city: "Mehsana"   },
+  cam24: { lat: 23.1770, lng: 72.7570, name: "dehgam",                   city: "Gandhinagar"},
+  cam25: { lat: 20.8130, lng: 72.9410, name: "dhanori",                  city: "Navsari"   },
+  cam26: { lat: 20.7750, lng: 72.9520, name: "TANKAL",                   city: "Navsari"   },
+  cam27: { lat: 20.7650, lng: 72.9600, name: "bilimora (cam27)",          city: "Navsari"   },
+  cam28: { lat: 20.7710, lng: 72.9570, name: "bilimora (cam28)",          city: "Navsari"   },
+  cam29: { lat: 20.7680, lng: 72.9545, name: "bilimora (cam29)",          city: "Navsari"   },
+  cam30: { lat: 23.0690, lng: 70.1320, name: "Gandhidham Rambaugh p2",   city: "Kutch"     },
+};
+
+const TILE_STYLES = {
+  light: {
+    name: '☀️ Clean Light Map',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors',
+  },
+  positron: {
+    name: '🏙️ Bright Positron',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '© OpenStreetMap © CARTO',
+  },
+  satellite: {
+    name: '🛰️ Satellite Hybrid',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri',
+  },
+};
+
+export default function GisMapView({ onSelectCamera }) {
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
   const tileLayerRef = useRef(null);
-  const markersRef = useRef([]);
-  const circlesRef = useRef([]);
-
+  const markersRef = useRef({});
   const [selectedCam, setSelectedCam] = useState(null);
-  const [mapProvider, setMapProvider] = useState(() => localStorage.getItem('gis_provider') || 'carto-light');
-  const [gisApiKey, setGisApiKey] = useState(() => 
-    localStorage.getItem('gis_api_key') || import.meta.env.VITE_GIS_API_KEY || ''
-  );
-  const [showKey, setShowKey] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('all');
-  const [showCoverage, setShowCoverage] = useState(true);
-
-  const handleApiKeyChange = (e) => {
-    const val = e.target.value.trim();
-    setGisApiKey(val);
-    localStorage.setItem('gis_api_key', val);
-  };
-
-  const handleProviderChange = (e) => {
-    const val = e.target.value;
-    setMapProvider(val);
-    localStorage.setItem('gis_provider', val);
-  };
-
-  const getTileConfig = (provider, key) => {
-    switch (provider) {
-      case 'mapbox-light':
-        if (key && key.startsWith('pk.')) {
-          return {
-            url: `https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/{z}/{x}/{y}?access_token=${key}`,
-            attribution: '&copy; Mapbox &copy; OpenStreetMap contributors &copy; Gujarat Cyber Vision'
-          };
-        }
-        return {
-          url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-          attribution: '&copy; CARTO &copy; OpenStreetMap'
-        };
-      case 'geoapify-light':
-        if (key) {
-          return {
-            url: `https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${key}`,
-            attribution: 'Powered by Geoapify &copy; OpenStreetMap'
-          };
-        }
-        return {
-          url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-          attribution: '&copy; CARTO &copy; OpenStreetMap'
-        };
-      case 'osm-light':
-        return {
-          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          attribution: '&copy; OpenStreetMap contributors &copy; Gujarat Cyber Vision GIS'
-        };
-      case 'carto-dark':
-        return {
-          url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-          attribution: '&copy; CARTO &copy; Gujarat Cyber Vision GIS'
-        };
-      case 'carto-light':
-      default:
-        return {
-          url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-          attribution: '&copy; CARTO &copy; OpenStreetMap contributors &copy; Gujarat Cyber Vision GIS'
-        };
-    }
-  };
+  const [mapStyle, setMapStyle] = useState('light'); // Default to clear, bright Light Map
 
   useEffect(() => {
-    if (!mapElementRef.current) return;
-
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
-
-    // Initialize Map centered over Gujarat
-    const map = L.map(mapElementRef.current, {
-      center: [22.4, 71.3],
-      zoom: 7,
-      minZoom: 6,
-      maxZoom: 18,
-      zoomControl: false,
-    });
-    mapInstanceRef.current = map;
-
-    L.control.zoom({ position: 'topright' }).addTo(map);
-
-    const tileConfig = getTileConfig(mapProvider, gisApiKey);
-    tileLayerRef.current = L.tileLayer(tileConfig.url, {
-      attribution: tileConfig.attribution,
-      subdomains: 'abcd',
-      maxZoom: 19,
-    }).addTo(map);
-
-    // Glowing Real Camera Marker Icon
-    const createCamIcon = (cam) => {
-      return L.divIcon({
-        className: 'custom-gis-marker',
-        html: `
-          <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(37, 99, 235, 0.35); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-            <div style="position: relative; width: 26px; height: 26px; border-radius: 50%; background: #ffffff; border: 2.5px solid #2563eb; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.3);">
-              <div style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a;"></div>
-            </div>
-          </div>
-        `,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17],
-        popupAnchor: [0, -18],
+    // Dynamically import Leaflet
+    import('leaflet').then((L) => {
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
-    };
 
-    // Render Real Markers
-    markersRef.current = [];
-    SENTINEL_GRID_GIS.forEach((cam) => {
-      const marker = L.marker([cam.lat, cam.lng], {
-        icon: createCamIcon(cam),
+      if (mapInstance.current) return;
+
+      // Initialize map centered on Gujarat with smooth zoom
+      const map = L.map(mapRef.current, {
+        center: [22.2587, 71.1924],
+        zoom: 7,
+        zoomControl: true,
+        attributionControl: false,
+      });
+
+      mapInstance.current = map;
+
+      // Add Bright, High-Contrast Light Tile Layer (NO API KEY REQUIRED)
+      const currentTile = TILE_STYLES[mapStyle] || TILE_STYLES.light;
+      tileLayerRef.current = L.tileLayer(currentTile.url, {
+        attribution: currentTile.attribution,
+        maxZoom: 19,
+        subdomains: 'abc',
       }).addTo(map);
 
-      const rtspUrl = `rtsp://103.250.160.189:8554/stream/${cam.id}`;
-      const hlsUrl = `https://cctv.corp8.cloud/${cam.id}/index.m3u8`;
-
-      const popupContent = `
-        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: #0f172a; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; min-width: 240px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
-            <span style="color: #2563eb; font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">${cam.id.toUpperCase()}</span>
-            <span style="color: #16a34a; font-weight: 700; font-size: 9px; padding: 2px 6px; background: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0;">100% ONLINE</span>
-          </div>
-          <div style="font-weight: 700; font-size: 12px; color: #0f172a; margin-bottom: 2px; line-height: 1.3;">${cam.name}</div>
-          <div style="color: #64748b; font-size: 10px; margin-bottom: 8px;">City: <b>${cam.city}</b> • ${cam.type}</div>
-          
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; font-family: monospace; font-size: 9px; color: #475569;">
-            <div style="margin-bottom: 2px;"><b style="color: #2563eb;">RTSP:</b> 103.250.160.189:8554/stream/${cam.id}</div>
-            <div><b style="color: #16a34a;">GPS:</b> ${cam.lat.toFixed(4)}° N, ${cam.lng.toFixed(4)}° E</div>
-          </div>
-
-          <div style="display: flex; gap: 6px; margin-top: 6px;">
-            <a href="${hlsUrl}" target="_blank" rel="noreferrer" style="flex: 1; text-align: center; padding: 5px 8px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; text-decoration: none; font-size: 10px; font-weight: 600;">
-              HLS Feed ↗
-            </a>
-          </div>
-        </div>
-      `;
-
-      marker.bindPopup(popupContent, { closeButton: false });
-      marker.on('click', () => {
-        setSelectedCam(cam);
+      // Custom high-contrast green checkmark / tick icon for cameras
+      const createCamIcon = (camId) => L.divIcon({
+        className: '',
+        html: `
+          <div style="
+            position:relative;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            cursor:pointer;
+          ">
+            <div style="
+              width:32px; height:32px;
+              background: linear-gradient(135deg, #059669, #10b981);
+              border: 2.5px solid #ffffff;
+              border-radius: 50%;
+              display:flex; align-items:center; justify-content:center;
+              box-shadow: 0 4px 14px rgba(0,0,0,0.35), 0 0 0 4px rgba(16,185,129,0.35);
+              position:relative;
+              z-index:2;
+            ">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div style="
+              width:2px; height:8px;
+              background:#059669;
+              margin-top:-2px;
+            "></div>
+            <div style="
+              background:#090d16;
+              border:1.5px solid #10b981;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+              border-radius:6px;
+              padding:2px 7px;
+              font-size:10px;
+              font-family:monospace;
+              color:#34d399;
+              white-space:nowrap;
+              margin-top:1px;
+              font-weight:900;
+              letter-spacing:0.05em;
+            ">${camId.toUpperCase()}</div>
+          </div>`,
+        iconSize: [64, 64],
+        iconAnchor: [32, 54],
+        popupAnchor: [0, -54],
       });
 
-      markersRef.current.push({ cam, marker });
+      // Add markers for all 30 cameras
+      Object.entries(CAMERA_COORDS).forEach(([camId, coord]) => {
+        const marker = L.marker([coord.lat, coord.lng], {
+          icon: createCamIcon(camId),
+          title: coord.name,
+        });
+
+        marker.addTo(map);
+
+        // Highlight ring around camera locations
+        L.circle([coord.lat, coord.lng], {
+          radius: 2500,
+          color: '#059669',
+          fillColor: '#10b981',
+          fillOpacity: 0.12,
+          weight: 1.5,
+          opacity: 0.6,
+        }).addTo(map);
+
+        marker.on('click', () => {
+          const cam = SENTINEL_CAMERAS.find((c) => c.id === camId);
+          if (cam) setSelectedCam({ ...cam, ...coord });
+        });
+
+        markersRef.current[camId] = marker;
+      });
     });
 
-    // Render Optical Coverage Cones / Radii
-    circlesRef.current = [];
-    if (showCoverage) {
-      SENTINEL_GRID_GIS.forEach((cam) => {
-        const circle = L.circle([cam.lat, cam.lng], {
-          radius: 120, // 120m optical field-of-view radius
-          color: '#2563eb',
-          fillColor: '#3b82f6',
-          fillOpacity: 0.16,
-          weight: 1.5,
-          dashArray: '3, 4'
-        }).addTo(map);
-        circlesRef.current.push(circle);
-      });
-    }
-
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
-
     return () => {
-      clearTimeout(timer);
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
       }
     };
-  }, [mapProvider, gisApiKey, showCoverage]);
+  }, []);
 
-  // Zoom to camera pin
-  const handleCamSelect = (cam) => {
-    setSelectedCam(cam);
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([cam.lat, cam.lng], 14, {
-        animate: true,
-        duration: 1.2,
-      });
-      const item = markersRef.current.find((m) => m.cam.id === cam.id);
-      if (item && item.marker) {
-        item.marker.openPopup();
-      }
-    }
+  // Update map tiles dynamically when user switches style
+  const handleStyleChange = (styleKey) => {
+    setMapStyle(styleKey);
+    if (!mapInstance.current || !tileLayerRef.current) return;
+    import('leaflet').then((L) => {
+      mapInstance.current.removeLayer(tileLayerRef.current);
+      const newTile = TILE_STYLES[styleKey] || TILE_STYLES.light;
+      tileLayerRef.current = L.tileLayer(newTile.url, {
+        attribution: newTile.attribution,
+        maxZoom: 19,
+        subdomains: 'abc',
+      }).addTo(mapInstance.current);
+    });
   };
 
-  const handleResetView = () => {
-    setSelectedCam(null);
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo([22.4, 71.3], 7, {
-        animate: true,
-        duration: 1,
-      });
-      mapInstanceRef.current.closePopup();
-    }
+  const focusCamera = (camId) => {
+    if (!mapInstance.current) return;
+    const coord = CAMERA_COORDS[camId];
+    if (!coord) return;
+    mapInstance.current.flyTo([coord.lat, coord.lng], 14, { duration: 1.2 });
+    const cam = SENTINEL_CAMERAS.find((c) => c.id === camId);
+    if (cam) setSelectedCam({ ...cam, ...coord });
   };
-
-  const filteredCams = SENTINEL_GRID_GIS.filter((cam) => {
-    if (selectedCity === 'all') return true;
-    return cam.city.toLowerCase() === selectedCity.toLowerCase();
-  });
-
-  const uniqueCities = Array.from(new Set(SENTINEL_GRID_GIS.map(c => c.city)));
 
   return (
-    <div className="space-y-4 h-[calc(100vh-8rem)] flex flex-col">
-      {/* Top Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-900/90 p-3 rounded-2xl border border-slate-800 shadow-lg">
+    <div className="flex flex-col gap-4 h-full">
+      {/* Leaflet CSS */}
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      />
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/90 px-5 py-3.5 rounded-2xl border border-slate-800 shadow-xl">
         <div>
-          <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-            <MapIcon className="w-5 h-5 text-blue-400" /> Gujarat State GIS Real Camera Grid
+          <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-emerald-400" /> Gujarat Sentinel GIS Command Map
           </h2>
-          <p className="text-xs text-slate-400 font-mono">
-            30 Verified Operational Sentinel Grid CCTV Nodes across Gujarat
+          <p className="text-xs text-slate-300 font-mono mt-0.5">
+            Bright &amp; Clear Road Mapping • 30 Gujarat Camera Nodes (✓) • Real GPS Coordinates
           </p>
         </div>
 
+        {/* Map Tile Style Switcher */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* GIS API Key */}
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-700">
-            <Key className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <input
-              type={showKey ? 'text' : 'password'}
-              placeholder="GIS API Key (Optional)"
-              value={gisApiKey}
-              onChange={handleApiKeyChange}
-              className="bg-transparent text-xs text-slate-200 outline-none w-36 sm:w-44 font-mono placeholder:text-slate-500"
-              title="Enter your Mapbox / Geoapify API key"
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="text-slate-400 hover:text-white p-0.5 transition"
-            >
-              {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            </button>
+          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-700">
+            {Object.entries(TILE_STYLES).map(([key, item]) => (
+              <button
+                key={key}
+                onClick={() => handleStyleChange(key)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1 ${
+                  mapStyle === key
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                {item.name}
+              </button>
+            ))}
           </div>
 
-          {/* Map Style Provider */}
-          <select
-            value={mapProvider}
-            onChange={handleProviderChange}
-            className="bg-slate-950 text-xs text-slate-200 px-3 py-1.5 rounded-xl border border-slate-700 outline-none font-mono cursor-pointer hover:border-slate-600 transition"
-          >
-            <option value="carto-light">☀️ Light Mode (Carto Positron)</option>
-            <option value="osm-light">☀️ Light Mode (OpenStreetMap Standard)</option>
-            <option value="geoapify-light">☀️ Light Mode (Geoapify + Key)</option>
-            <option value="mapbox-light">☀️ Light Mode (Mapbox + Key)</option>
-            <option value="carto-dark">🌙 Dark Mode (Tactical HUD)</option>
-          </select>
-
-          {/* Coverage Cones Toggle */}
-          <button
-            onClick={() => setShowCoverage(!showCoverage)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition border ${
-              showCoverage
-                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/20'
-                : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'
-            }`}
-            title="Toggle 120m optical camera coverage radiuses"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Coverage ({showCoverage ? 'ON' : 'OFF'})</span>
-          </button>
-
-          {/* Center State */}
-          <button
-            onClick={handleResetView}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-mono transition"
-          >
-            <Navigation className="w-3.5 h-3.5" />
-            <span>Center State</span>
-          </button>
-
-          <span className="text-xs font-mono px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold flex items-center gap-1.5">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
-            30 NODES ONLINE
+          <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-xs font-mono flex items-center gap-1.5">
+            <Radio className="w-3 h-3 animate-pulse" /> 30 ONLINE
           </span>
         </div>
       </div>
 
-      {/* Main Content: Real Cameras List + Map Canvas */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-0">
-        {/* Left Side: Real Camera List */}
-        <div className="lg:col-span-1 bg-slate-900/90 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2 overflow-hidden shadow-xl">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-xs font-bold text-slate-300 font-mono flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-blue-400" /> Real Camera Nodes ({filteredCams.length})
-            </span>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="bg-slate-950 text-[10px] text-slate-300 px-2 py-1 rounded-lg border border-slate-700 outline-none font-mono cursor-pointer"
-            >
-              <option value="all">All Cities</option>
-              {uniqueCities.map(city => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
+      {/* Main Map + Sidebar Layout */}
+      <div className="flex flex-col xl:flex-row gap-4" style={{ minHeight: '620px' }}>
+        {/* Map */}
+        <div className="flex-1 relative rounded-2xl overflow-hidden border border-slate-700 shadow-2xl" style={{ minHeight: '600px' }}>
+          <div ref={mapRef} className="w-full h-full" style={{ minHeight: '600px', background: '#e5e7eb' }} />
+
+          {/* Map overlay: district legend */}
+          <div className="absolute bottom-4 left-4 bg-slate-950/90 backdrop-blur-md border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-200 space-y-1 z-[400] shadow-xl pointer-events-none">
+            <div className="text-emerald-400 font-bold mb-1">📍 Gujarat Sentinel Network (30 Cameras)</div>
+            <div>🟢 Ahmedabad (9)  🟢 Junagadh (5)</div>
+            <div>🟢 Navsari (5)    🟢 Gandhinagar (2)</div>
+            <div>🟢 Rajkot (2)     🟢 Patan, Banaskantha, Mehsana, Gir Somnath, Kutch (7)</div>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-            {filteredCams.map((cam) => {
-              const isSelected = selectedCam?.id === cam.id;
-
-              return (
-                <div
-                  key={cam.id}
-                  onClick={() => handleCamSelect(cam)}
-                  className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col gap-1.5 ${
-                    isSelected
-                      ? 'bg-blue-600/20 border-blue-500 shadow-lg shadow-blue-500/10'
-                      : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/40'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[10px] font-mono font-bold text-blue-400 px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 shrink-0">
-                        {cam.id.toUpperCase()}
-                      </span>
-                      <span className="text-xs font-bold text-white font-sans truncate">
-                        {cam.name}
-                      </span>
-                    </div>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shrink-0">
-                      ONLINE
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <span className="text-[10px] text-slate-400 truncate">{cam.type}</span>
-                    <span className="text-[10px] text-slate-500 shrink-0">{cam.city}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Footer */}
-          <div className="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-            <span className="flex items-center gap-1 text-emerald-400">
-              <CheckCircle2 className="w-3.5 h-3.5" /> 103.250.160.189:8554
-            </span>
-            <span className="text-blue-400 font-bold">30 Real Nodes</span>
+          {/* Sentinel HUD overlay */}
+          <div className="absolute top-4 left-4 bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-3 py-2 text-[10px] font-mono text-cyan-300 flex items-center gap-2 z-[400] shadow-xl pointer-events-none">
+            <Shield className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="font-bold">GUJARAT POLICE SENTINEL • CLEAR LIGHT ROAD GIS • 30 NODES ACTIVE</span>
           </div>
         </div>
 
-        {/* Right Side: Leaflet Light Mode Map Canvas */}
-        <div className="lg:col-span-3 rounded-2xl border border-slate-700 bg-slate-100 overflow-hidden shadow-2xl relative flex flex-col">
-          <div 
-            ref={mapElementRef} 
-            className="w-full h-full min-h-[420px] relative z-0"
-            style={{ background: '#e2e8f0' }}
-          />
-
-          {/* Overlay HUD Pill */}
-          <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur-md border border-slate-300 rounded-xl px-3 py-2 pointer-events-none shadow-md">
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-800">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-              <span>GIS MAP MODE: <b className="text-blue-600">SENTINEL OPERATIONAL GRID</b></span>
-            </div>
-            {selectedCam && (
-              <div className="text-[11px] font-mono text-slate-600 mt-0.5">
-                Target: <b className="text-slate-900">{selectedCam.name}</b> ({selectedCam.lat.toFixed(4)}° N, {selectedCam.lng.toFixed(4)}° E)
-              </div>
-            )}
+        {/* Right Sidebar: Camera List */}
+        <div className="xl:w-72 flex flex-col gap-2 overflow-y-auto bg-slate-950/60 p-2 rounded-2xl border border-slate-800" style={{ maxHeight: '630px' }}>
+          <div className="text-xs font-mono text-slate-300 font-bold px-1 mb-1 flex items-center gap-1.5">
+            <Camera className="w-3.5 h-3.5 text-emerald-400" /> 30 LOCATIONS (CLICK TO FOCUS)
           </div>
+          {SENTINEL_CAMERAS.map((cam) => {
+            const coord = CAMERA_COORDS[cam.id];
+            const isActive = selectedCam?.id === cam.id;
+            return (
+              <button
+                key={cam.id}
+                onClick={() => focusCamera(cam.id)}
+                className={`w-full text-left px-3 py-2 rounded-xl border transition flex items-center gap-2.5 group ${
+                  isActive
+                    ? 'bg-emerald-500/20 border-emerald-500 text-white shadow shadow-emerald-500/20'
+                    : 'bg-slate-900/80 border-slate-800/90 hover:border-emerald-500/50 hover:bg-slate-800/80'
+                }`}
+              >
+                {/* Tick / Check */}
+                <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold border ${
+                  isActive ? 'bg-emerald-500 border-emerald-300 text-white' : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                }`}>
+                  ✓
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className={`text-xs font-mono font-bold truncate ${isActive ? 'text-emerald-300' : 'text-slate-200 group-hover:text-emerald-300'}`}>
+                    {cam.id.toUpperCase()} — {cam.city}
+                  </div>
+                  <div className="text-[10px] text-slate-400 truncate">{cam.name}</div>
+                </div>
+                <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap flex-shrink-0 font-bold">
+                  LIVE
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Live Stream Popup when marker clicked */}
+      {selectedCam && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden max-w-2xl w-full shadow-2xl animate-in fade-in duration-150">
+            {/* Modal Header */}
+            <div className="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                <span className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-mono font-bold">
+                  {selectedCam.id.toUpperCase()}
+                </span>
+                <span className="font-bold text-white text-sm">{selectedCam.name} ({selectedCam.city})</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+                  LIVE 1080p
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedCam(null)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-600/30 text-slate-400 hover:text-red-400 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Live Video */}
+            <div className="relative aspect-video bg-black">
+              <img
+                src={`${API_BASE_URL}/api/video_feed?cam_id=${selectedCam.id}&city=${encodeURIComponent(selectedCam.city)}&junction=${encodeURIComponent(selectedCam.name)}`}
+                alt={selectedCam.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-900 px-4 py-2.5 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>RTSP: 103.250.160.189:8554/stream/{selectedCam.id}</span>
+              <button
+                onClick={() => {
+                  if (onSelectCamera) onSelectCamera(selectedCam);
+                  setSelectedCam(null);
+                }}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition shadow shadow-blue-600/30"
+              >
+                Stream to Mission Control
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

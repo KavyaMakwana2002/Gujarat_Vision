@@ -14,15 +14,17 @@ import EvidenceVaultView from './views/EvidenceVaultView';
 import AllAlertsView from './views/AllAlertsView';
 import StolenRegistryView from './views/StolenRegistryView';
 import BlacklistTrackerView from './views/BlacklistTrackerView';
-import RemoteNvrView from './views/RemoteNvrView';
+import LaptopCamScannerView from './views/LaptopCamScannerView';
 import CctvRegistryView from './views/CctvRegistryView';
 import VideoWallView from './views/VideoWallView';
+import VmsFederationHubView from './views/VmsFederationHubView';
 
 import { surveillanceService, API_BASE_URL } from './services/api';
 
 const VALID_VIEWS = [
   'dashboard',
   'registry',
+  'vms-federation',
   'video-wall',
   'camera-matrix',
   'live-location',
@@ -33,7 +35,7 @@ const VALID_VIEWS = [
   'all-alerts',
   'stolen-cars',
   'blacklist-loc',
-  'remote-nvr'
+  'laptop-cam'
 ];
 
 export default function App() {
@@ -67,9 +69,28 @@ export default function App() {
     return 'dashboard';
   };
 
+  const getInitialActiveCamera = () => {
+    try {
+      const saved = localStorage.getItem('sentinel_active_camera');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.id || parsed.camera_id)) {
+          return {
+            id: (parsed.id || parsed.camera_id).toLowerCase(),
+            name: parsed.name || 'Surveillance Node',
+            city: parsed.city || 'Ahmedabad'
+          };
+        }
+      }
+    } catch {}
+    return { id: 'cam01', name: 'Chiman bhai Bridge', city: 'Ahmedabad' };
+  };
+
   const getInitialStreamUrl = () => {
     const savedStream = localStorage.getItem('sentinel_active_stream');
-    return savedStream || `${API_BASE_URL}/api/video_feed`;
+    if (savedStream) return savedStream;
+    const initialCam = getInitialActiveCamera();
+    return `${API_BASE_URL}/api/video_feed?cam_id=${initialCam.id}&city=${encodeURIComponent(initialCam.city)}`;
   };
 
   const [activeView, setActiveView] = useState(getInitialView);
@@ -78,6 +99,7 @@ export default function App() {
   const [liveAlerts, setLiveAlerts] = useState([]);
   const [activeRedAlert, setActiveRedAlert] = useState(null);
   const [activeStreamUrl, setActiveStreamUrl] = useState(getInitialStreamUrl);
+  const [activeCamera, setActiveCamera] = useState(getInitialActiveCamera);
 
   // 2. Clean HTML5 Path Navigation (No hash)
   const handleNavigate = (view) => {
@@ -88,6 +110,31 @@ export default function App() {
     if (window.location.pathname !== targetPath) {
       window.history.pushState({ view }, '', targetPath);
     }
+  };
+
+  // Unified camera switch handler (stores to localStorage & updates feed instantly)
+  const handleSelectCamera = (cam) => {
+    if (!cam) return;
+    const cleanCam = {
+      id: (cam.id || cam.camera_id || 'cam01').toLowerCase(),
+      name: cam.name || `Camera ${cam.id || '01'}`,
+      city: cam.city || 'Ahmedabad',
+      codec: cam.codec || 'H.264',
+      res: cam.res || cam.resolution || '1080p'
+    };
+
+    setActiveCamera(cleanCam);
+    localStorage.setItem('sentinel_active_camera', JSON.stringify(cleanCam));
+
+    const streamUrl = `${API_BASE_URL}/api/video_feed?cam_id=${cleanCam.id}&city=${encodeURIComponent(cleanCam.city)}&t=${Date.now()}`;
+    setActiveStreamUrl(streamUrl);
+    localStorage.setItem('sentinel_active_stream', streamUrl);
+
+    // Asynchronously notify backend stream engine without blocking UI
+    surveillanceService.setStreamSource(cleanCam.id).catch(() => {});
+
+    // Instantly jump to Dashboard view to watch live stream
+    handleNavigate('dashboard');
   };
 
   // 3. Listen to browser Back and Forward navigation buttons
@@ -109,23 +156,35 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeView]);
 
-  // Poll backend endpoints
+  // Poll backend endpoints with fallback
   const fetchSurveillanceData = async () => {
     try {
-      const [statsRes, detRes, alertsRes] = await Promise.allSettled([
+      const [statsRes, detRes, liveDetRes, alertsRes] = await Promise.allSettled([
         surveillanceService.getStats(),
         surveillanceService.getDetections(),
+        surveillanceService.getLiveDetections(),
         surveillanceService.getLiveAlerts(),
       ]);
 
       if (statsRes.status === 'fulfilled' && statsRes.value.data) {
-        setStats(statsRes.value.data);
+        setStats(prev => ({
+          ...prev,
+          ...statsRes.value.data
+        }));
       }
-      if (detRes.status === 'fulfilled' && detRes.value.data) {
+      if (liveDetRes.status === 'fulfilled' && liveDetRes.value.data?.detections) {
+        setDetections(liveDetRes.value.data.detections);
+        if (liveDetRes.value.data.total_detected) {
+          setStats(prev => ({
+            ...prev,
+            total_vehicles: Math.max(prev.total_vehicles || 14820, 14820 + liveDetRes.value.data.total_detected)
+          }));
+        }
+      } else if (detRes.status === 'fulfilled' && detRes.value.data) {
         setDetections(detRes.value.data);
       }
       if (alertsRes.status === 'fulfilled' && alertsRes.value.data) {
-        setLiveAlerts(alertsRes.value.data);
+        setLiveAlerts(alertsRes.value.data.alerts || alertsRes.value.data);
       }
     } catch (err) {
       console.warn('Backend polling error:', err);
@@ -143,45 +202,42 @@ export default function App() {
     switch (activeView) {
       case 'dashboard':
         return (
-          <DashboardView 
-            stats={stats} 
-            detections={detections} 
+          <DashboardView
+            stats={stats}
+            detections={detections}
             liveAlerts={liveAlerts}
             activeStreamUrl={activeStreamUrl}
+            activeCamera={activeCamera}
           />
         );
       case 'registry':
         return (
-          <CctvRegistryView 
-            onSelectCamera={(cam) => {
-              handleNavigate('camera-matrix');
-            }}
+          <CctvRegistryView
+            onSelectCamera={handleSelectCamera}
           />
         );
+      case 'vms-federation':
+        return <VmsFederationHubView />;
       case 'video-wall':
         return <VideoWallView />;
       case 'camera-matrix':
         return (
-          <CameraMatrixView 
-            onSelectCamera={async (cam) => {
-              try {
-                await surveillanceService.setStreamSource(cam.id);
-              } catch (e) {}
-              const streamUrl = `${API_BASE_URL}/api/video_feed?cam_id=${cam.id}&city=${encodeURIComponent(cam.city)}&t=${Date.now()}`;
-              setActiveStreamUrl(streamUrl);
-              localStorage.setItem('sentinel_active_stream', streamUrl);
-              handleNavigate('dashboard');
-            }} 
+          <CameraMatrixView
+            onSelectCamera={handleSelectCamera}
           />
         );
       case 'live-location':
         return (
-          <LiveLocationView 
-            onSelectHub={() => handleNavigate('camera-matrix')} 
+          <LiveLocationView
+            onSelectHub={() => handleNavigate('camera-matrix')}
           />
         );
       case 'gis-map':
-        return <GisMapView />;
+        return (
+          <GisMapView
+            onSelectCamera={handleSelectCamera}
+          />
+        );
       case 'vehicle-details':
         return <VehicleRegistryView />;
       case 'vehicle-search':
@@ -194,15 +250,16 @@ export default function App() {
         return <StolenRegistryView />;
       case 'blacklist-loc':
         return <BlacklistTrackerView />;
-      case 'remote-nvr':
-        return <RemoteNvrView />;
+      case 'laptop-cam':
+        return <LaptopCamScannerView />;
       default:
         return (
-          <DashboardView 
-            stats={stats} 
-            detections={detections} 
+          <DashboardView
+            stats={stats}
+            detections={detections}
             liveAlerts={liveAlerts}
             activeStreamUrl={activeStreamUrl}
+            activeCamera={activeCamera}
           />
         );
     }
@@ -211,18 +268,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* Top Navbar */}
-      <Navbar 
-        officerName="Officer Admin" 
-        officerBadge="GJ-POL-007" 
+      <Navbar
+        officerName="Officer Admin"
+        officerBadge="GJ-POL-007"
         onLogout={() => alert("Officer Logged Out Successfully")}
       />
 
       {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar with Clean HTML5 Routing */}
-        <Sidebar 
-          activeView={activeView} 
-          setActiveView={handleNavigate} 
+        <Sidebar
+          activeView={activeView}
+          setActiveView={handleNavigate}
           onLogout={() => alert("Officer Logged Out Successfully")}
         />
 
@@ -234,8 +291,8 @@ export default function App() {
 
       {/* Red Alert Siren Modal */}
       {activeRedAlert && (
-        <RedAlertModal 
-          alertData={activeRedAlert} 
+        <RedAlertModal
+          alertData={activeRedAlert}
           onClose={() => setActiveRedAlert(null)}
           onAcknowledge={(alert) => {
             alert(`🚨 PCR Patrol Van Vector Dispatched to Intercept ${alert.plate}!`);
