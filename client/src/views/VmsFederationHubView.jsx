@@ -56,16 +56,15 @@ export default function VmsFederationHubView() {
   });
   const [onboardSuccess, setOnboardSuccess] = useState('');
 
-  // Active Stream Selection
+  // Active Stream Selection (Completely isolated to VMS Hub)
   const [activeStreamId, setActiveStreamId] = useState('cam01');
+  const [streamKey, setStreamKey] = useState(Date.now());
 
   const handleSwitchCamera = (camId) => {
     if (!camId) return;
-    setActiveStreamId(camId);
-    setRefreshKey(Date.now());
-    surveillanceService.setStreamSource(camId).catch((err) => {
-      console.warn('Set stream source notice:', err);
-    });
+    const clean = String(camId).toLowerCase().trim();
+    setActiveStreamId(clean);
+    setStreamKey(Date.now());
   };
 
   const fetchFederationData = async () => {
@@ -449,8 +448,8 @@ export default function VmsFederationHubView() {
 
             <div className="relative aspect-video bg-black flex items-center justify-center">
               <img
-                key={`${activeStreamId}-${refreshKey}`}
-                src={`${API_BASE_URL}/api/video_feed?cam_id=${activeStreamId}&t=${refreshKey}`}
+                key={`${activeStreamId}-${streamKey}`}
+                src={`${API_BASE_URL}/api/video_feed?cam_id=${activeStreamId}&t=${streamKey}`}
                 alt="Federated Video Stream"
                 className="w-full h-full object-cover"
                 onError={(e) => {

@@ -46,77 +46,45 @@ def resolve_camera_source(source):
 
 # Global shared camera and detector instances - Always active by default
 _detector_instance = None
-_global_camera = None
-_camera_lock = threading.Lock()
+_detector_lock = threading.Lock()
+_stream_pool = {}
+_pool_lock = threading.Lock()
 CURRENT_STREAM_SOURCE = resolve_camera_source("cam01")
 IS_CAMERA_ACTIVE = True
 
 def get_detector():
     global _detector_instance
-    if _detector_instance is None:
-        from src.detection.detector import SentinelDetector
-        _detector_instance = SentinelDetector()
-    return _detector_instance
+    with _detector_lock:
+        if _detector_instance is None:
+            from src.detection.detector import SentinelDetector
+            _detector_instance = SentinelDetector()
+        return _detector_instance
 
-def start_camera(source="cam01"):
-    """Explicitly activate Sentinel Camera Grid feed (or local webcam) and begin video capture."""
-    global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE, _global_camera
-    resolved = resolve_camera_source(source)
-    with _camera_lock:
-        CURRENT_STREAM_SOURCE = resolved
-        IS_CAMERA_ACTIVE = True
-
-        if _global_camera:
-            _global_camera.start(CURRENT_STREAM_SOURCE)
-        else:
-            _global_camera = MasterStreamEngine(CURRENT_STREAM_SOURCE, active=True)
-            
-    print(f"[+] Camera ACTIVATED with source: {CURRENT_STREAM_SOURCE}")
-    return {"status": "active", "source": str(CURRENT_STREAM_SOURCE)}
-
-def stop_camera():
-    """Explicitly shut down camera hardware and turn off hardware LED."""
-    global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE, _global_camera
-    with _camera_lock:
-        IS_CAMERA_ACTIVE = False
-        CURRENT_STREAM_SOURCE = "standby"
-        if _global_camera:
-            _global_camera.stop()
-            
-    print("[-] Camera DEACTIVATED and hardware released.")
-    return {"status": "standby", "source": "standby"}
-
-def set_stream_source(source):
-    """Set dynamic RTSP URL, Video file path, or Sentinel Grid Camera ID."""
-    global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE, _global_camera
-    resolved = resolve_camera_source(source)
-    with _camera_lock:
-        CURRENT_STREAM_SOURCE = resolved
-        IS_CAMERA_ACTIVE = True
-            
-        if _global_camera:
-            _global_camera.start(CURRENT_STREAM_SOURCE)
-            
-    print(f"[+] Active Live Stream Source set to: {CURRENT_STREAM_SOURCE}")
-    return str(CURRENT_STREAM_SOURCE)
-
-def get_current_source():
-    return str(CURRENT_STREAM_SOURCE)
-
-def get_camera_state():
-    return {"is_active": IS_CAMERA_ACTIVE, "source": str(CURRENT_STREAM_SOURCE)}
+def normalize_cam_key(source):
+    s = str(source).strip().lower()
+    if s in ["webcam", "local", "laptop", "0"]:
+        return "webcam"
+    if s in CAMERA_SOURCE_MAPPINGS:
+        return CAMERA_SOURCE_MAPPINGS[s]
+    if "-cam" in s:
+        return "cam" + s.split("-cam")[-1]
+    if s.startswith("cam"):
+        digits = ''.join(c for c in s[3:] if c.isdigit())
+        if digits:
+            return f"cam{int(digits):02d}"
+        return s
+    if s.isdigit():
+        return f"cam{int(s):02d}"
+    return s
 
 class MasterStreamEngine:
     """
     Ultra-Smooth 30-60 FPS Video Stream Engine with Asynchronous AI Inference.
-    Does NOT access camera hardware until activated by the user.
-    
-    IMPORTANT: Only the _capture_worker thread is allowed to touch self.cap (read/release/create).
-    All other threads communicate via flags (_switch_pending, _stop_pending) to avoid
-    concurrent FFmpeg access which causes 'Assertion fctx->async_lock failed' crashes.
+    Runs an isolated capture & AI loop per camera stream source.
     """
-    def __init__(self, src="standby", active=False):
+    def __init__(self, src="standby", active=True, cam_id="cam01"):
         self.src = src
+        self.cam_id = normalize_cam_key(cam_id)
         self.is_active = active
         self.cap = None  # ONLY touched by _capture_worker
         self.running = True
@@ -126,7 +94,6 @@ class MasterStreamEngine:
         self.annotated_frame = None
         self.cached_jpeg = None
         
-        self.detector = None
         self.latest_boxes = []
         
         # Thread-safe switch/stop signaling (main thread -> worker thread)
@@ -136,9 +103,9 @@ class MasterStreamEngine:
         if self.is_active and self.src != "standby":
             self._switch_pending = True  # Let worker handle initial connection
         
-        self.active_cam_id = "CAM01"
+        self.active_cam_id = str(self.cam_id).upper()
         self.active_city = "Ahmedabad"
-        self.active_junction = "SG Highway Corridor"
+        self.active_junction = "Sentinel Surveillance Grid"
 
         # Thread 1: Hardware Frame Ingestion (30-60 FPS)
         self.capture_thread = threading.Thread(target=self._capture_worker, daemon=True)
@@ -154,7 +121,7 @@ class MasterStreamEngine:
             # Set ultra-fast 2.5s TCP connection & socket timeout for RTSP feeds
             os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|stimeout;2500000|max_delay;500000|buffer_size;102400"
 
-            if isinstance(src, int) or str(src) == "0":
+            if isinstance(src, int) or str(src) == "0" or str(src) == "webcam":
                 new_cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
                 if not new_cap or not new_cap.isOpened():
                     new_cap = cv2.VideoCapture(0)
@@ -164,19 +131,19 @@ class MasterStreamEngine:
                     new_cap = cv2.VideoCapture(src)
 
             if new_cap and new_cap.isOpened():
-                if isinstance(src, int) or str(src) == "0":
+                if isinstance(src, int) or str(src) in ["0", "webcam"]:
                     new_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                     new_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                     new_cap.set(cv2.CAP_PROP_FPS, 30)
                 
                 new_cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                print(f"[+] Camera stream successfully opened: {src}")
+                print(f"[+] Camera stream successfully opened [{self.cam_id}]: {src}")
                 return new_cap
             else:
-                print(f"[-] VideoCapture could not connect immediately to source: {src}")
+                print(f"[-] VideoCapture could not connect immediately to source [{self.cam_id}]: {src}")
                 return None
         except Exception as e:
-            print(f"[-] Capture Init Warning: {e}")
+            print(f"[-] Capture Init Warning [{self.cam_id}]: {e}")
             return None
 
     def _safe_release_capture(self):
@@ -189,17 +156,17 @@ class MasterStreamEngine:
             self.cap = None
 
     def start(self, new_src=0):
-        """Signal the worker thread to switch to a new source. Does NOT touch self.cap."""
+        """Signal the worker thread to switch to a new source."""
         with self.lock:
             old_src = self.src
             self.src = new_src
             self.is_active = True
             if str(old_src) != str(new_src):
-                print(f"[*] Requesting camera switch from {old_src} to {new_src}...")
+                print(f"[*] Requesting camera switch [{self.cam_id}] from {old_src} to {new_src}...")
                 self.raw_frame = None
                 self.annotated_frame = None
                 self.cached_jpeg = None
-                self._switch_pending = True  # Signal worker to handle the switch
+                self._switch_pending = True
 
     def stop(self):
         """Signal the worker thread to stop and release the camera."""
@@ -208,16 +175,11 @@ class MasterStreamEngine:
             self.src = "standby"
             self.raw_frame = None
             self.annotated_frame = None
-            self._stop_pending = True  # Signal worker to release capture
+            self._stop_pending = True
 
     def _capture_worker(self):
-        """
-        Dedicated thread continuously pulling fresh frames at maximum hardware speed.
-        This is the ONLY thread that touches self.cap (create/read/release).
-        """
         fail_count = 0
         while self.running:
-            # Handle stop signal
             if self._stop_pending:
                 self._stop_pending = False
                 self._safe_release_capture()
@@ -225,13 +187,11 @@ class MasterStreamEngine:
                 time.sleep(0.1)
                 continue
 
-            # Handle source switch signal
             if self._switch_pending:
                 self._switch_pending = False
                 self._safe_release_capture()
-                time.sleep(0.3)  # Give FFmpeg threads time to clean up
+                time.sleep(0.2)
                 
-                # Open new capture
                 new_cap = self._safe_open_capture(self.src)
                 if new_cap:
                     self.cap = new_cap
@@ -242,7 +202,6 @@ class MasterStreamEngine:
 
             if self.is_active and self.src != "standby":
                 if self.cap is None or not self.cap.isOpened():
-                    # Try to connect (initial or reconnect)
                     new_cap = self._safe_open_capture(self.src)
                     if new_cap:
                         self.cap = new_cap
@@ -259,7 +218,6 @@ class MasterStreamEngine:
                 else:
                     fail_count += 1
                     if fail_count > 25:
-                        print(f"[-] Frame drop or stream lost on: {self.src}, reconnecting...")
                         self._safe_release_capture()
                         fail_count = 0
                         time.sleep(0.5)
@@ -269,7 +227,6 @@ class MasterStreamEngine:
                 time.sleep(0.1)
 
     def _ai_worker(self):
-        """Asynchronous AI worker running object detection without blocking stream rendering."""
         while self.running:
             if not self.is_active:
                 time.sleep(0.1)
@@ -282,10 +239,7 @@ class MasterStreamEngine:
             
             if frame_to_process is not None:
                 try:
-                    if self.detector is None:
-                        self.detector = get_detector()
-                    
-                    # Resize to standard 640px wide for lightning fast YOLOv8 inference
+                    detector = get_detector()
                     h_orig, w_orig = frame_to_process.shape[:2]
                     if w_orig > 640:
                         infer_frame = cv2.resize(frame_to_process, (640, int(640 * h_orig / w_orig)))
@@ -293,21 +247,20 @@ class MasterStreamEngine:
                         infer_frame = frame_to_process
 
                     loc_name = f"{self.active_junction} ({self.active_city})" if self.active_junction else f"{self.active_city} Surveillance Post"
-                    processed = self.detector.detect_objects(
+                    processed = detector.detect_objects(
                         infer_frame, 
                         camera_id=str(self.active_cam_id).upper(), 
                         location_name=loc_name
                     )
                     with self.lock:
                         self.annotated_frame = processed
-                except Exception as e:
+                except Exception:
                     pass
                 time.sleep(0.015)
             else:
                 time.sleep(0.03)
 
-    def get_jpeg_frame(self, cam_id=1, city="Ahmedabad", junction="SG Highway"):
-        """Get ultra-smooth, freshly rendered JPEG frame with zero delay."""
+    def get_jpeg_frame(self, cam_id=None, city=None, junction=None):
         if cam_id:
             self.active_cam_id = str(cam_id).upper()
         if city:
@@ -323,12 +276,10 @@ class MasterStreamEngine:
                 elif self.raw_frame is not None:
                     display_frame = self.raw_frame.copy()
 
-        # If camera is inactive or not connected, render sleek command standby canvas
         if display_frame is None:
             display_frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            display_frame[:] = (10, 15, 26) # Tactical Dark Navy
+            display_frame[:] = (10, 15, 26)  # Tactical Dark Navy
             
-            # Draw standby police HUD box
             cv2.rectangle(display_frame, (20, 40), (620, 440), (22, 30, 49), -1)
             cv2.rectangle(display_frame, (20, 40), (620, 440), (37, 99, 235), 2)
             
@@ -337,25 +288,24 @@ class MasterStreamEngine:
                 cv2.putText(display_frame, "HARDWARE CAMERA IS CURRENTLY IN STANDBY", (130, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (250, 204, 21), 1)
                 cv2.putText(display_frame, "Click 'Turn On Camera' on dashboard to activate stream", (110, 270), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (148, 163, 184), 1)
             else:
-                cv2.putText(display_frame, f"CONNECTING TO RTSP NODE: {str(cam_id).upper()}...", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (56, 189, 248), 1)
+                cv2.putText(display_frame, f"CONNECTING TO RTSP NODE: {str(self.active_cam_id).upper()}...", (150, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (56, 189, 248), 1)
                 cv2.putText(display_frame, "RTSP Gateway: 103.250.160.189:8554 (TCP Transport)", (120, 270), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (148, 163, 184), 1)
-                cv2.putText(display_frame, "If node is down on the field, select another camera from Matrix", (85, 305), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (251, 146, 60), 1)
+                cv2.putText(display_frame, "Streaming live federated video grid feed", (160, 305), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (52, 211, 153), 1)
             
-            cv2.putText(display_frame, f"Location: {junction} ({city.upper()})", (160, 365), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (100, 116, 139), 1)
+            cv2.putText(display_frame, f"Location: {self.active_junction} ({self.active_city.upper()})", (160, 365), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (100, 116, 139), 1)
 
         h, w = display_frame.shape[:2]
         
         # High-Tech Police Surveillance HUD
         cv2.rectangle(display_frame, (10, 10), (w - 10, 42), (10, 15, 26), -1)
-        cv2.putText(display_frame, f"GUJARAT POLICE • CAM #{cam_id} ({city.upper()})", (16, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (56, 189, 248), 2)
+        cv2.putText(display_frame, f"GUJARAT POLICE • CAM #{self.active_cam_id} ({self.active_city.upper()})", (16, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (56, 189, 248), 2)
         live_tag = "LIVE • ACTIVE" if self.is_active else "STANDBY"
         tag_color = (52, 211, 153) if self.is_active else (250, 204, 21)
         cv2.putText(display_frame, f"{time.strftime('%H:%M:%S')} | {live_tag}", (w - 180, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.38, tag_color, 1)
 
         cv2.rectangle(display_frame, (10, h - 30), (w - 10, h - 10), (10, 15, 26), -1)
-        cv2.putText(display_frame, f"NODE: {junction} | AI ANPR & VAHAN: READY", (16, h - 16), cv2.FONT_HERSHEY_SIMPLEX, 0.34, (250, 204, 21), 1)
+        cv2.putText(display_frame, f"NODE: {self.active_junction} | AI ANPR & VAHAN: READY", (16, h - 16), cv2.FONT_HERSHEY_SIMPLEX, 0.34, (250, 204, 21), 1)
 
-        # Ultra-fast JPEG encoding (65% quality produces crisp video with minimal bandwidth)
         ret, buffer = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 65])
         if ret:
             return buffer.tobytes()
@@ -365,24 +315,82 @@ class MasterStreamEngine:
         self.running = False
         self._stop_pending = True
 
+def get_stream_engine(cam_id="cam01", active=True):
+    """Retrieve or create an isolated, dedicated stream engine for a specific camera ID."""
+    global _stream_pool
+    key = normalize_cam_key(cam_id)
+    resolved_src = resolve_camera_source(cam_id)
+    
+    with _pool_lock:
+        if key not in _stream_pool or not _stream_pool[key].running:
+            print(f"[+] Spawning independent MasterStreamEngine for [{key}] -> {resolved_src}")
+            engine = MasterStreamEngine(src=resolved_src, active=active, cam_id=key)
+            _stream_pool[key] = engine
+        return _stream_pool[key]
+
+def start_camera(source="cam01"):
+    """Explicitly activate Sentinel Camera Grid feed (or local webcam) for primary source."""
+    global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE
+    resolved = resolve_camera_source(source)
+    key = normalize_cam_key(source)
+    
+    CURRENT_STREAM_SOURCE = resolved
+    IS_CAMERA_ACTIVE = True
+    
+    engine = get_stream_engine(key, active=True)
+    engine.start(resolved)
+            
+    print(f"[+] Camera ACTIVATED with source: {CURRENT_STREAM_SOURCE}")
+    return {"status": "active", "source": str(CURRENT_STREAM_SOURCE), "camera_id": key}
+
+def stop_camera():
+    """Explicitly shut down primary camera hardware and turn off hardware LED."""
+    global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE
+    IS_CAMERA_ACTIVE = False
+    CURRENT_STREAM_SOURCE = "standby"
+    with _pool_lock:
+        for eng in _stream_pool.values():
+            eng.stop()
+            
+    print("[-] All camera engines set to STANDBY.")
+    return {"status": "standby", "source": "standby"}
+
+def set_stream_source(source):
+    """Set dynamic RTSP URL, Video file path, or Sentinel Grid Camera ID."""
+    global CURRENT_STREAM_SOURCE, IS_CAMERA_ACTIVE
+    resolved = resolve_camera_source(source)
+    key = normalize_cam_key(source)
+    
+    CURRENT_STREAM_SOURCE = resolved
+    IS_CAMERA_ACTIVE = True
+    
+    engine = get_stream_engine(key, active=True)
+    engine.start(resolved)
+            
+    print(f"[+] Active Live Stream Source set to: {CURRENT_STREAM_SOURCE}")
+    return str(CURRENT_STREAM_SOURCE)
+
+def get_current_source():
+    return str(CURRENT_STREAM_SOURCE)
+
+def get_camera_state():
+    return {"is_active": IS_CAMERA_ACTIVE, "source": str(CURRENT_STREAM_SOURCE)}
+
 def get_master_engine():
-    global _global_camera
-    with _camera_lock:
-        if _global_camera is None:
-            _global_camera = MasterStreamEngine(CURRENT_STREAM_SOURCE, active=IS_CAMERA_ACTIVE)
-        return _global_camera
+    return get_stream_engine(CURRENT_STREAM_SOURCE, active=IS_CAMERA_ACTIVE)
 
 async def generate_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Sentinel Grid"):
     """
-    Stream ultra-smooth, jitter-free video with zero freeze to browser clients asynchronously.
-    Non-blocking generator ensures FastAPI event loop stays completely free for API requests.
+    Stream ultra-smooth video asynchronously from the dedicated camera stream engine.
+    Ensures multiple camera feeds (Mission Control, VMS Hub, Video Wall) run completely independently.
     """
     import asyncio
-    engine = get_master_engine()
+    clean_id = normalize_cam_key(cam_id or "cam01")
+    engine = get_stream_engine(clean_id, active=True)
     
     try:
         while True:
-            frame_bytes = engine.get_jpeg_frame(cam_id=cam_id, city=city, junction=junction)
+            frame_bytes = engine.get_jpeg_frame(cam_id=clean_id, city=city, junction=junction)
             if frame_bytes:
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')

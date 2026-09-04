@@ -76,10 +76,6 @@ from src.ingestion.web_streamer import (
 async def get_live_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Sentinel Grid"):
     """Live MJPEG video stream with YOLOv8 & ANPR overlays directly for browser dashboard."""
     clean_cam = (cam_id or "cam01").strip().lower()
-    current_state = get_camera_state()
-    if not current_state.get("is_active") or clean_cam not in str(current_state.get("source", "")).lower():
-        start_camera(clean_cam)
-    
     return StreamingResponse(
         generate_video_stream(cam_id=clean_cam, city=city, junction=junction),
         media_type="multipart/x-mixed-replace; boundary=frame"
