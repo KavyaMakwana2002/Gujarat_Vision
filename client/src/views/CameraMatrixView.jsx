@@ -138,8 +138,16 @@ export default function CameraMatrixView({ onSelectCamera }) {
                 <div className="text-[11px] font-mono text-slate-400 mb-2">
                   District: <b className="text-slate-300">{cam.city}</b> • {cam.codec} • {cam.res}
                 </div>
-                <div className="text-[10px] font-mono text-slate-500 bg-slate-950 p-2 rounded-lg border border-slate-800/80 truncate">
-                  {rtspUrl}
+                <div 
+                  onClick={() => {
+                    navigator.clipboard.writeText(rtspUrl);
+                    alert(`RTSP URL copied for VLC / VMS:\n${rtspUrl}`);
+                  }}
+                  className="text-[10px] font-mono text-cyan-400/80 hover:text-cyan-300 bg-slate-950 p-2 rounded-lg border border-slate-800/80 truncate cursor-pointer flex items-center justify-between group/rtsp"
+                  title="Click to copy RTSP URL"
+                >
+                  <span className="truncate">{rtspUrl}</span>
+                  <span className="text-[9px] text-slate-500 group-hover/rtsp:text-cyan-400 shrink-0 ml-2 font-bold">COPY</span>
                 </div>
               </div>
 

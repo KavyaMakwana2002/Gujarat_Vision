@@ -1,5 +1,12 @@
 import os
 import sys
+
+# Suppress low-level FFmpeg macroblock and decoder debug spam
+os.environ["OPENCV_FFMPEG_LOGLEVEL"] = "-8"
+os.environ["OPENCV_LOG_LEVEL"] = "FATAL"
+os.environ["AV_LOG_FORCE_NOCOLOR"] = "1"
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;500000|reorder_queue_size;0|stimeout;5000000"
+
 import uvicorn
 
 # Memory optimizations for Linux cloud environments (Render 512MB limit)

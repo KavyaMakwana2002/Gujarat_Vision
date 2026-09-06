@@ -178,8 +178,8 @@ class GovernmentCameraGateway:
         cam_info = self.get_camera_by_id(cam_id)
         rtsp_url = cam_info.get("rtsp_url")
         
-        # Enforce TCP transport
-        os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+        # Enforce low-latency TCP transport without buffer lag
+        os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffer|flags;low_delay|max_delay;500000|reorder_queue_size;0|stimeout;5000000"
         
         logger.info(f"[{time.strftime('%H:%M:%S')}] OPEN_RTSP_TCP camera=CAM-{cam_id} url={rtsp_url} codec={cam_info.get('codec')} res={cam_info.get('resolution')}")
         

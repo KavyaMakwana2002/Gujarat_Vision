@@ -208,6 +208,7 @@ export default function App() {
             liveAlerts={liveAlerts}
             activeStreamUrl={activeStreamUrl}
             activeCamera={activeCamera}
+            onSelectCamera={handleSelectCamera}
           />
         );
       case 'registry':

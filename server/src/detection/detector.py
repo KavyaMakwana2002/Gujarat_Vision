@@ -4,6 +4,7 @@ import time
 import math
 import cv2
 import gc
+import threading
 from src.matching.watchlist import check_watchlist_match
 from src.alerts.alert_engine import trigger_red_alert
 
@@ -126,6 +127,7 @@ class SentinelDetector:
     def __init__(self):
         self.model = None 
         self.anpr = None
+        self.inference_lock = threading.Lock()
         
         # Track caches and TTL state
         self.saved_track_ids = set() 
@@ -196,21 +198,23 @@ class SentinelDetector:
         model = self._get_model()
         anpr = self._get_anpr()
 
-        # Run fast YOLOv8 tracking with tuned sensitivity for Indian traffic
-        results = model.track(
-            frame, 
-            persist=True, 
-            tracker="bytetrack.yaml", 
-            verbose=False, 
-            conf=0.25, 
-            iou=0.45,
-            imgsz=480
-        )
+        # Run fast YOLOv8 tracking with tuned sensitivity for Indian traffic with thread safety
+        with self.inference_lock:
+            results = model.track(
+                frame, 
+                persist=True, 
+                tracker="bytetrack.yaml", 
+                verbose=False, 
+                conf=0.25, 
+                iou=0.45,
+                imgsz=480
+            )
         
         for r in results:
             boxes = r.boxes
-            if boxes.id is not None:
-                for box, track_id, cls, conf_val in zip(boxes.xyxy, boxes.id, boxes.cls, boxes.conf):
+            track_ids = boxes.id if boxes.id is not None else range(1, len(boxes.xyxy) + 1)
+            
+            for box, track_id, cls, conf_val in zip(boxes.xyxy, track_ids, boxes.cls, boxes.conf):
                     x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
                     track_id = int(track_id)
                     cls = int(cls)

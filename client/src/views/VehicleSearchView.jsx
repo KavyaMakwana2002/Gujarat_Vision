@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Car, AlertTriangle, ShieldCheck, Filter } from 'lucide-react';
+import { Search, Car, AlertTriangle, ShieldCheck, Filter, FileText } from 'lucide-react';
+import EChallanModal from '../components/EChallanModal';
 
 export default function VehicleSearchView({ detections, watchlist }) {
   const [query, setQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
+  const [selectedChallanVehicle, setSelectedChallanVehicle] = useState(null);
 
   const filtered = (detections || []).filter((d) => {
     const matchesQuery = (d.plate_number || '').toLowerCase().includes(query.toLowerCase()) ||
@@ -64,6 +66,7 @@ export default function VehicleSearchView({ detections, watchlist }) {
                 <th className="p-3">LOCATION NODE</th>
                 <th className="p-3">TIMESTAMP</th>
                 <th className="p-3">STATUS</th>
+                <th className="p-3 text-right">ACTION</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -82,11 +85,21 @@ export default function VehicleSearchView({ detections, watchlist }) {
                         VERIFIED
                       </span>
                     </td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => setSelectedChallanVehicle(d)}
+                        className="px-3 py-1 bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/40 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ml-auto"
+                        title="Generate Official E-Challan Notice"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>E-Challan</span>
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-500">
+                  <td colSpan="7" className="p-8 text-center text-slate-500">
                     No vehicle records matching "{query}".
                   </td>
                 </tr>
@@ -95,6 +108,14 @@ export default function VehicleSearchView({ detections, watchlist }) {
           </table>
         </div>
       </div>
+
+      {/* E-Challan Modal */}
+      {selectedChallanVehicle && (
+        <EChallanModal
+          vehicle={selectedChallanVehicle}
+          onClose={() => setSelectedChallanVehicle(null)}
+        />
+      )}
     </div>
   );
 }

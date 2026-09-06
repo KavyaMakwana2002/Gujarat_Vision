@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Camera, 
   CameraOff, 
@@ -7,7 +7,9 @@ import {
   RefreshCw, 
   Shield, 
   ExternalLink, 
-  Loader2 
+  Loader2,
+  Download,
+  Check
 } from 'lucide-react';
 import { surveillanceService, API_BASE_URL } from '../services/api';
 
@@ -16,6 +18,8 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
   const [loading, setLoading] = useState(false);
   const [camActionLoading, setCamActionLoading] = useState(false);
   const [streamKey, setStreamKey] = useState(Date.now());
+  const [snapshotSaved, setSnapshotSaved] = useState(false);
+  const imgRef = useRef(null);
 
   // Extract cam_id from streamUrl safely
   const getCamId = useCallback(() => {
@@ -33,14 +37,43 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
   // Reset stream loading on camera change
   useEffect(() => {
     setIsStreaming(true);
-    setLoading(true);
     setStreamKey(Date.now());
+    const timer = setTimeout(() => setLoading(false), 250);
+    return () => clearTimeout(timer);
   }, [streamUrl]);
 
   // ─── Action Handlers ────────────────────────────────────────────────────────
   const handleRefresh = () => {
-    setLoading(true);
     setStreamKey(Date.now());
+  };
+
+  const handleTakeSnapshot = () => {
+    if (!imgRef.current) return;
+    try {
+      const img = imgRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || 1280;
+      canvas.height = img.naturalHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Add Official Police Watermark
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(10, canvas.height - 40, canvas.width - 20, 30);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(`GUJARAT POLICE SURVEILLANCE • EVIDENCE SNAPSHOT [${camId.toUpperCase()}] • ${new Date().toLocaleString()}`, 20, canvas.height - 20);
+
+      const link = document.createElement('a');
+      link.download = `Gujarat_Police_Evidence_${camId.toUpperCase()}_${Date.now()}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+      
+      setSnapshotSaved(true);
+      setTimeout(() => setSnapshotSaved(false), 2500);
+    } catch (err) {
+      console.warn('Snapshot capture notice:', err);
+    }
   };
 
   const handleStartCamera = async () => {
@@ -102,6 +135,15 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
               </span>
 
               <button
+                onClick={handleTakeSnapshot}
+                className="p-1.5 px-2.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-300 transition border border-cyan-700/50 flex items-center gap-1 font-bold text-[10px]"
+                title="Capture & Download Live Evidence Snapshot"
+              >
+                {snapshotSaved ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Download className="w-3.5 h-3.5 text-cyan-400" />}
+                <span>{snapshotSaved ? 'SAVED!' : 'SNAPSHOT'}</span>
+              </button>
+
+              <button
                 onClick={handleRefresh}
                 className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700"
                 title="Refresh Stream Feed"
@@ -109,12 +151,23 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
                 <RefreshCw className="w-3.5 h-3.5" />
               </button>
 
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`rtsp://103.250.160.189:8554/stream/${camId}`);
+                  alert(`RTSP Stream URL copied to clipboard:\nrtsp://103.250.160.189:8554/stream/${camId}\n\n(Use this URL in VLC Media Player or VMS Client)`);
+                }}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 transition border border-slate-700 flex items-center gap-1 text-[10px]"
+                title="Copy RTSP URL for VLC / VMS"
+              >
+                <span>RTSP</span>
+              </button>
+
               <a
-                href={`rtsp://103.250.160.189:8554/stream/${camId}`}
+                href={activeFeedUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700 flex items-center gap-1"
-                title="Open RTSP Source Feed"
+                title="Open Live AI Web Stream in New Window"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
@@ -149,6 +202,8 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
           <>
             {/* Live AI MJPEG Stream */}
             <img
+              ref={imgRef}
+              crossOrigin="anonymous"
               key={`feed-${camId}-${streamKey}`}
               src={activeFeedUrl}
               alt={title}

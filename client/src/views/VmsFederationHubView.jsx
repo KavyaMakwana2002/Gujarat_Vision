@@ -69,20 +69,27 @@ export default function VmsFederationHubView() {
 
   const fetchFederationData = async () => {
     try {
-      setLoading(true);
-      const [ovRes, sysRes, corrRes, evtRes] = await Promise.all([
+      const [ovRes, sysRes, corrRes, evtRes] = await Promise.allSettled([
         surveillanceService.getFederationOverview(),
         surveillanceService.getFederatedSystems(),
         surveillanceService.getCrossSystemCorrelations(),
         surveillanceService.getFederatedEvents({ limit: 40 })
       ]);
 
-      setOverview(ovRes.data);
-      setSystems(sysRes.data?.systems || []);
-      setCorrelations(corrRes.data?.correlations || []);
-      setEvents(evtRes.data?.events || []);
+      if (ovRes.status === 'fulfilled' && ovRes.value?.data) {
+        setOverview(ovRes.value.data);
+      }
+      if (sysRes.status === 'fulfilled' && sysRes.value?.data?.systems) {
+        setSystems(sysRes.value.data.systems);
+      }
+      if (corrRes.status === 'fulfilled' && corrRes.value?.data?.correlations) {
+        setCorrelations(corrRes.value.data.correlations);
+      }
+      if (evtRes.status === 'fulfilled' && evtRes.value?.data?.events) {
+        setEvents(evtRes.value.data.events);
+      }
     } catch (err) {
-      console.error('Failed to load federation data', err);
+      console.warn('Federation data background note:', err);
     } finally {
       setLoading(false);
     }
@@ -371,8 +378,8 @@ export default function VmsFederationHubView() {
                             type="button"
                             onClick={() => handleSwitchCamera('cam12')}
                             className={`text-[9px] font-mono font-bold px-2 py-1 rounded-lg border flex items-center gap-1 transition shadow ${activeStreamId === 'cam12'
-                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/30'
-                                : 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/30'
+                              : 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
                               }`}
                           >
                             <Zap className="w-3 h-3" />
@@ -380,19 +387,33 @@ export default function VmsFederationHubView() {
                           </button>
                         )}
 
-                        {sys.cameras?.map((cam) => (
-                          <button
-                            key={cam.id}
-                            type="button"
-                            onClick={() => handleSwitchCamera(cam.id)}
-                            className={`text-[9px] font-mono px-2 py-0.5 rounded transition ${activeStreamId === cam.id
-                                ? 'bg-blue-600 text-white font-bold shadow ring-1 ring-blue-400'
-                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                              }`}
-                          >
-                            ▶ {cam.id.toUpperCase()}
-                          </button>
-                        ))}
+                        {/* Quick Shortcut Buttons for ALL 30 Cameras */}
+                        <div className="pt-2">
+                          <div className="text-[10px] text-slate-400 font-mono mb-1.5 flex items-center justify-between">
+                            <span>Quick 1-Click Cam Selector (1 to {sys.cameras?.length || 30}):</span>
+                            <span className="text-emerald-400 font-bold">● {activeStreamId.toUpperCase()} Active</span>
+                          </div>
+                          <div className="grid grid-cols-6 sm:grid-cols-10 gap-1 max-h-36 overflow-y-auto p-1.5 bg-slate-900/90 rounded-xl border border-slate-800">
+                            {sys.cameras?.map((cam, cIdx) => {
+                              const isSelected = activeStreamId === cam.id.toLowerCase();
+                              const numLabel = cam.id.replace('cam', '').replace('toll-', '').padStart(2, '0');
+                              return (
+                                <button
+                                  key={cam.id}
+                                  type="button"
+                                  onClick={() => handleSwitchCamera(cam.id)}
+                                  title={`${cam.id.toUpperCase()}: ${cam.name} (${cam.location})`}
+                                  className={`text-[10px] font-mono font-bold py-1 px-1 rounded-lg text-center transition flex flex-col items-center justify-center ${isSelected
+                                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40 ring-1 ring-blue-400 scale-105'
+                                      : 'bg-slate-950 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800'
+                                    }`}
+                                >
+                                  <span>{numLabel}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -448,12 +469,14 @@ export default function VmsFederationHubView() {
 
             <div className="relative aspect-video bg-black flex items-center justify-center">
               <img
-                key={`${activeStreamId}-${streamKey}`}
+                key={`fed-${activeStreamId}-${streamKey}`}
                 src={`${API_BASE_URL}/api/video_feed?cam_id=${activeStreamId}&t=${streamKey}`}
                 alt="Federated Video Stream"
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1200&q=80';
+                onError={() => {
+                  setTimeout(() => {
+                    setStreamKey(Date.now());
+                  }, 1000);
                 }}
               />
               <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-[10px] font-mono text-white flex items-center gap-1.5 shadow-lg">
@@ -497,8 +520,8 @@ export default function VmsFederationHubView() {
                     <div
                       key={corr.incident_id}
                       className={`p-4 rounded-xl border transition shadow-lg ${isCritical
-                          ? 'bg-red-950/20 border-red-500/40 hover:border-red-500/60'
-                          : 'bg-slate-950/80 border-slate-800 hover:border-amber-500/40'
+                        ? 'bg-red-950/20 border-red-500/40 hover:border-red-500/60'
+                        : 'bg-slate-950/80 border-slate-800 hover:border-amber-500/40'
                         }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -508,8 +531,8 @@ export default function VmsFederationHubView() {
                               {corr.plate_number}
                             </span>
                             <span className={`text-[9px] font-bold font-mono px-2 py-0.5 rounded border ${isCritical
-                                ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                               }`}>
                               {corr.severity}
                             </span>
@@ -594,8 +617,8 @@ export default function VmsFederationHubView() {
             <button
               onClick={() => setHotlistOnly(!hotlistOnly)}
               className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition ${hotlistOnly
-                  ? 'bg-red-600 text-white shadow'
-                  : 'bg-slate-800 text-slate-300 hover:text-white'
+                ? 'bg-red-600 text-white shadow'
+                : 'bg-slate-800 text-slate-300 hover:text-white'
                 }`}
             >
               <Filter className="w-3.5 h-3.5" />

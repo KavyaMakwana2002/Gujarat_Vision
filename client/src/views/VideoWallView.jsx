@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Grid, 
-  Layers, 
-  Maximize2, 
+import {
+  Grid,
+  Layers,
+  Maximize2,
   LayoutGrid,
-  RefreshCw, 
-  Radio, 
-  Shield, 
-  Camera, 
+  RefreshCw,
+  Radio,
+  Shield,
+  Camera,
   CheckCircle2,
   Sliders,
   Play,
@@ -20,7 +20,7 @@ import { SENTINEL_CAMERAS } from './CameraMatrixView';
 import { API_BASE_URL } from '../services/api';
 
 // Complete Camera Catalogue with Tollnakas & Regional Nodes
-const TOLL_CAMERAS = [
+export const TOLL_CAMERAS = [
   { id: 'cam12', name: 'CAM12: Tri Mandir Tollnaka (Gandhinagar)', city: 'Gandhinagar', type: 'NHAI Toll' },
   { id: 'toll-ne1-01', name: 'NE-1 Expressway Toll Node (CAM12)', city: 'Expressway', type: 'NHAI Toll' },
   { id: 'toll-ne1-02', name: 'NE-1 Anand Interchange Node (CAM05)', city: 'Anand', type: 'NHAI Toll' },
@@ -54,7 +54,7 @@ const PRESETS = [
 export default function VideoWallView() {
   const [layout, setLayout] = useState('2x2'); // '2x2' or '3x3'
   const [fullscreenTile, setFullscreenTile] = useState(null);
-  
+
   // Independent tile feed assignments (Default diverse 9-camera grid)
   const [tileFeeds, setTileFeeds] = useState([
     'cam01', // Tile 1
@@ -163,22 +163,20 @@ export default function VideoWallView() {
           <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
             <button
               onClick={() => setLayout('2x2')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                layout === '2x2' 
-                  ? 'bg-blue-600 text-white shadow' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${layout === '2x2'
+                ? 'bg-blue-600 text-white shadow'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               2x2 Grid (4 Cams)
             </button>
             <button
               onClick={() => setLayout('3x3')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                layout === '3x3' 
-                  ? 'bg-blue-600 text-white shadow' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${layout === '3x3'
+                ? 'bg-blue-600 text-white shadow'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               <Maximize2 className="w-3.5 h-3.5" />
               3x3 Wall (9 Cams)
@@ -219,16 +217,15 @@ export default function VideoWallView() {
       </div>
 
       {/* Video Wall Grid Display */}
-      <div className={`grid gap-3.5 ${
-        layout === '2x2' 
-          ? 'grid-cols-1 md:grid-cols-2' 
-          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-      }`}>
+      <div className={`grid gap-3.5 ${layout === '2x2'
+        ? 'grid-cols-1 md:grid-cols-2'
+        : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+        }`}>
         {tileFeeds.slice(0, numTiles).map((feedId, idx) => {
           const camDetails = getCameraDetails(feedId);
 
           return (
-            <div 
+            <div
               key={idx}
               className="bg-slate-900/90 rounded-2xl border border-slate-800 overflow-hidden shadow-xl flex flex-col group hover:border-blue-500/50 transition"
             >
@@ -239,52 +236,63 @@ export default function VideoWallView() {
                     #{idx + 1}
                   </span>
 
+                  {/* Quick Previous Camera */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const digits = (feedId.match(/\d+/) || [1])[0];
+                      let nextNum = parseInt(digits) - 1;
+                      if (nextNum < 1) nextNum = 30;
+                      handleFeedChange(idx, `cam${String(nextNum).padStart(2, '0')}`);
+                    }}
+                    className="px-1.5 py-0.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded border border-slate-800 text-[10px] font-bold"
+                    title="Previous Camera (1-30)"
+                  >
+                    ◀
+                  </button>
+
                   {/* Independent Feed Selector Dropdown for THIS Tile */}
                   <select
                     value={feedId}
                     onChange={(e) => handleFeedChange(idx, e.target.value)}
-                    className="bg-slate-900 border border-slate-800 hover:border-blue-500 text-white font-bold text-xs rounded-lg px-2 py-1 outline-none cursor-pointer truncate max-w-[260px] transition"
+                    className="bg-slate-900 border border-slate-800 hover:border-blue-500 text-white font-bold text-xs rounded-lg px-2 py-1 outline-none cursor-pointer truncate max-w-[220px] transition"
                   >
+                    <optgroup label="🚨 Gujarat Police CCTV Grid (CAM 01 to 30)">
+                      {Array.from({ length: 30 }).map((_, i) => {
+                        const cid = `cam${String(i + 1).padStart(2, '0')}`;
+                        const found = SENTINEL_CAMERAS.find(c => c.id === cid);
+                        const label = found ? `${cid.toUpperCase()}: ${found.name} (${found.city})` : `${cid.toUpperCase()} - Node #${i + 1}`;
+                        return (
+                          <option key={cid} value={cid} className="bg-slate-950 text-white font-mono">
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+
                     <optgroup label="⚡ Highway Tolls & Expressways">
                       {TOLL_CAMERAS.map((toll) => (
-                        <option key={toll.id} value={toll.id} className="bg-slate-950 text-white">
+                        <option key={toll.id} value={toll.id} className="bg-slate-950 text-amber-300 font-mono">
                           {toll.name}
                         </option>
                       ))}
                     </optgroup>
-
-                    <optgroup label="🏙️ Ahmedabad Urban Grid">
-                      {SENTINEL_CAMERAS.filter(c => c.city === 'Ahmedabad').map((c) => (
-                        <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                          {c.id.toUpperCase()}: {c.name} ({c.city})
-                        </option>
-                      ))}
-                    </optgroup>
-
-                    <optgroup label="🌊 Saurashtra (Junagadh & Rajkot)">
-                      {SENTINEL_CAMERAS.filter(c => ['Junagadh', 'Rajkot', 'Gir Somnath'].includes(c.city)).map((c) => (
-                        <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                          {c.id.toUpperCase()}: {c.name} ({c.city})
-                        </option>
-                      ))}
-                    </optgroup>
-
-                    <optgroup label="🌴 South Gujarat (Navsari, Surat)">
-                      {SENTINEL_CAMERAS.filter(c => ['Navsari', 'Surat'].includes(c.city)).map((c) => (
-                        <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                          {c.id.toUpperCase()}: {c.name} ({c.city})
-                        </option>
-                      ))}
-                    </optgroup>
-
-                    <optgroup label="📍 Other District Nodes">
-                      {SENTINEL_CAMERAS.filter(c => !['Ahmedabad', 'Junagadh', 'Rajkot', 'Gir Somnath', 'Navsari', 'Surat'].includes(c.city)).map((c) => (
-                        <option key={c.id} value={c.id} className="bg-slate-950 text-white">
-                          {c.id.toUpperCase()}: {c.name} ({c.city})
-                        </option>
-                      ))}
-                    </optgroup>
                   </select>
+
+                  {/* Quick Next Camera */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const digits = (feedId.match(/\d+/) || [1])[0];
+                      let nextNum = parseInt(digits) + 1;
+                      if (nextNum > 30) nextNum = 1;
+                      handleFeedChange(idx, `cam${String(nextNum).padStart(2, '0')}`);
+                    }}
+                    className="px-1.5 py-0.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded border border-slate-800 text-[10px] font-bold"
+                    title="Next Camera (1-30)"
+                  >
+                    ▶
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -308,12 +316,14 @@ export default function VideoWallView() {
               {/* Video Player Screen */}
               <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
                 <img
-                  key={`${feedId}-${tileRefreshKeys[idx] || 0}`}
+                  key={`tile-${feedId}-${tileRefreshKeys[idx] || 0}`}
                   src={getTileStreamUrl(feedId, idx)}
                   alt={`Tile ${idx + 1}`}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=1200&q=80';
+                  onError={() => {
+                    setTimeout(() => {
+                      setTileRefreshKeys(prev => ({ ...prev, [idx]: Date.now() }));
+                    }, 1000);
                   }}
                 />
 
