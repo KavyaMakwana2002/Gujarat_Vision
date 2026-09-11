@@ -249,10 +249,10 @@ export default function GisMapView({ onSelectCamera }) {
       </div>
 
       {/* Main Map + Sidebar Layout */}
-      <div className="flex flex-col xl:flex-row gap-4" style={{ minHeight: '620px' }}>
+      <div className="flex-1 flex flex-col xl:flex-row gap-4 overflow-hidden min-h-0">
         {/* Map */}
-        <div className="flex-1 relative rounded-2xl overflow-hidden border border-slate-700 shadow-2xl" style={{ minHeight: '600px' }}>
-          <div ref={mapRef} className="w-full h-full" style={{ minHeight: '600px', background: '#e5e7eb' }} />
+        <div className="flex-1 relative rounded-2xl overflow-hidden border border-slate-700 shadow-2xl min-h-0">
+          <div ref={mapRef} className="w-full h-full z-0" style={{ background: '#e5e7eb' }} />
 
           {/* Map overlay: district legend */}
           <div className="absolute bottom-4 left-4 bg-slate-950/90 backdrop-blur-md border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-200 space-y-1 z-[400] shadow-xl pointer-events-none">
@@ -270,7 +270,7 @@ export default function GisMapView({ onSelectCamera }) {
         </div>
 
         {/* Right Sidebar: Camera List */}
-        <div className="xl:w-72 flex flex-col gap-2 overflow-y-auto bg-slate-950/60 p-2 rounded-2xl border border-slate-800" style={{ maxHeight: '630px' }}>
+        <div className="xl:w-72 flex flex-col gap-2 overflow-y-auto bg-slate-950/60 p-2 rounded-2xl border border-slate-800 h-full">
           <div className="text-xs font-mono text-slate-300 font-bold px-1 mb-1 flex items-center gap-1.5">
             <Camera className="w-3.5 h-3.5 text-emerald-400" /> 30 LOCATIONS (CLICK TO FOCUS)
           </div>

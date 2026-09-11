@@ -21,18 +21,15 @@ import {
 
 export const NAV_ITEMS = [
   { id: 'dashboard', label: '1. Mission Control', icon: LayoutDashboard, sub: 'Live Feed & Metrics' },
-  { id: 'registry', label: '2. Centralised CCTV Registry', icon: Building2, sub: 'Bulk Import & Gap Analysis', highlight: true },
-  { id: 'vms-federation', label: '3. VMS Federation Hub', icon: Network, sub: 'Model 3 Interoperability', highlight: true },
-  { id: 'video-wall', label: '4. Multi-VMS Video Wall', icon: Grid, sub: '2x2 & 3x3 Live Matrix', highlight: true },
-  { id: 'camera-matrix', label: '5. Sentinel Camera Grid', icon: Camera, sub: '30 Operational Nodes' },
-  { id: 'gis-map', label: '6. Real GIS Command Map', icon: Map, sub: 'GPS Operational Pins' },
-  { id: 'live-location', label: '7. Live Location Hubs', icon: MapPin, sub: 'City Junctions' },
-  { id: 'vehicle-intel-hub', label: '8. Vehicle & Intelligence Hub', icon: ShieldAlert, sub: 'RTO Registry & Crime Tracking', badgeColor: 'text-purple-400' },
-  { id: 'record-video', label: '9. Record & Evidence', icon: Disc, sub: 'Incident Clips' },
-  { id: 'stray-animal', label: '10. Stray Animal Detection', icon: AlertTriangle, sub: 'Highway Hazard System', highlight: true },
-  { id: 'green-corridor', label: '11. Green Corridor', icon: Crosshair, sub: 'Ambulance Life-Saver', highlight: true },
-  { id: 'sos-safety', label: '12. Women Safety SOS', icon: Siren, sub: 'Gesture Panic Dispatch', badgeColor: 'text-pink-400' },
-  { id: 'laptop-cam', label: '13. Mobile & Web Cam ANPR', icon: Smartphone, sub: 'Phone Back Cam Scanner', highlight: true },
+  { id: 'vms-federation', label: '2. VMS Hub & Video Wall', icon: Network, sub: 'Federation & Live Matrix', highlight: true },
+  { id: 'camera-matrix', label: '3. Camera Grid & Live Locations', icon: Camera, sub: '30 Nodes & City Junctions' },
+  { id: 'registry', label: '4. CCTV Registry & GIS Map', icon: Building2, sub: 'Database & Live Mapping', highlight: true },
+  { id: 'vehicle-intel-hub', label: '5. Vehicle & Intelligence Hub', icon: ShieldAlert, sub: 'RTO Registry & Crime Tracking', badgeColor: 'text-purple-400' },
+  { id: 'record-video', label: '6. Record & Evidence', icon: Disc, sub: 'Incident Clips' },
+  { id: 'stray-animal', label: '7. Stray Animal Detection', icon: AlertTriangle, sub: 'Highway Hazard System', highlight: true },
+  { id: 'green-corridor', label: '8. Green Corridor', icon: Crosshair, sub: 'Ambulance Life-Saver', highlight: true },
+  { id: 'sos-safety', label: '9. Women Safety SOS', icon: Siren, sub: 'Gesture Panic Dispatch', badgeColor: 'text-pink-400' },
+  { id: 'laptop-cam', label: '10. Mobile & Web Cam ANPR', icon: Smartphone, sub: 'Phone Back Cam Scanner', highlight: true },
 ];
 
 export default function Sidebar({ activeView, setActiveView, onLogout }) {
@@ -52,10 +49,10 @@ export default function Sidebar({ activeView, setActiveView, onLogout }) {
               key={item.id}
               onClick={() => setActiveView(item.id)}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 text-left text-xs font-semibold group ${isActive
-                  ? 'bg-gradient-to-r from-blue-600/80 to-blue-500/60 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] border border-blue-400/30'
-                  : item.highlight
-                    ? 'bg-cyan-950/20 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-900/40 hover:shadow-lg hover:shadow-cyan-900/20'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border border-transparent'
+                ? 'bg-gradient-to-r from-blue-600/80 to-blue-500/60 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] border border-blue-400/30'
+                : item.highlight
+                  ? 'bg-cyan-950/20 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-900/40 hover:shadow-lg hover:shadow-cyan-900/20'
+                  : 'text-slate-300 hover:bg-slate-800/60 hover:text-white border border-transparent'
                 }`}
             >
               <div className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-white/20 shadow-inner' : 'bg-slate-900/50 group-hover:bg-slate-700/50'}`}>

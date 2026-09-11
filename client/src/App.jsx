@@ -6,14 +6,15 @@ import RedAlertModal from './components/RedAlertModal';
 // Views
 import DashboardView from './views/DashboardView';
 import CameraMatrixView from './views/CameraMatrixView';
-import LiveLocationView from './views/LiveLocationView';
+import CameraLocationHubView from './views/CameraLocationHubView';
 import GisMapView from './views/GisMapView';
 import EvidenceVaultView from './views/EvidenceVaultView';
 import VehicleIntelligenceHubView from './views/VehicleIntelligenceHubView';
 import LaptopCamScannerView from './views/LaptopCamScannerView';
-import CctvRegistryView from './views/CctvRegistryView';
+import RegistryAndGisHubView from './views/RegistryAndGisHubView';
 import VideoWallView from './views/VideoWallView';
 import VmsFederationHubView from './views/VmsFederationHubView';
+import VmsAndVideoWallHubView from './views/VmsAndVideoWallHubView';
 import SmartCityHubView from './views/SmartCityHubView';
 
 import { surveillanceService, API_BASE_URL } from './services/api';
@@ -22,10 +23,8 @@ const VALID_VIEWS = [
   'dashboard',
   'registry',
   'vms-federation',
-  'video-wall',
   'camera-matrix',
   'live-location',
-  'gis-map',
   'vehicle-intel-hub',
   'record-video',
   'stray-animal',
@@ -209,29 +208,21 @@ export default function App() {
         );
       case 'registry':
         return (
-          <CctvRegistryView
+          <RegistryAndGisHubView
             onSelectCamera={handleSelectCamera}
           />
         );
       case 'vms-federation':
-        return <VmsFederationHubView />;
-      case 'video-wall':
-        return <VideoWallView />;
+        return <VmsAndVideoWallHubView />;
       case 'camera-matrix':
         return (
-          <CameraMatrixView
+          <CameraLocationHubView
             onSelectCamera={handleSelectCamera}
           />
         );
       case 'live-location':
         return (
-          <LiveLocationView
-            onSelectHub={() => handleNavigate('camera-matrix')}
-          />
-        );
-      case 'gis-map':
-        return (
-          <GisMapView
+          <CameraLocationHubView
             onSelectCamera={handleSelectCamera}
           />
         );

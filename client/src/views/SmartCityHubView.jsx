@@ -115,7 +115,7 @@ export default function SmartCityHubView({ activeFeature, activeStreamUrl, detec
           
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <img 
-              src={activeStreamUrl || `${API_BASE_URL}/api/video_feed?cam_id=cam01`} 
+              src={activeFeature === 'stray-animal' ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Animal.mp4&city=Ahmedabad&junction=Stray+Animal+Hotspot` : (activeStreamUrl || `${API_BASE_URL}/api/video_feed?cam_id=cam01`)} 
               alt="Live Feed"
               className="w-full h-full object-contain"
               onError={(e) => {

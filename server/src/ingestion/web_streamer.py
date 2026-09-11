@@ -68,6 +68,8 @@ def resolve_camera_source(source):
     directly to their 1:1 real RTSP hardware URLs.
     """
     s = str(source).strip()
+    if s.lower().endswith(('.mp4', '.avi', '.mov')):
+        return s
     if s.lower() in ["webcam", "local", "laptop", "0"]:
         return 0
     if s.startswith("rtsp://") and "@" in s:
@@ -101,7 +103,10 @@ def get_detector():
         return _detector_instance
 
 def normalize_cam_key(source):
-    s = str(source).strip().lower()
+    s = str(source).strip()
+    if s.lower().endswith(('.mp4', '.avi', '.mov')):
+        return s
+    s = s.lower()
     if s in ["webcam", "local", "laptop", "0"]:
         return "webcam"
     if s in CAMERA_SOURCE_MAPPINGS:
@@ -217,6 +222,7 @@ class MasterStreamEngine:
     def _capture_worker(self):
         consecutive_errors = 0
         last_reconnect_time = 0.0
+        is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov'))
 
         while self.running:
             if self._stop_pending:
@@ -233,6 +239,7 @@ class MasterStreamEngine:
                 if new_cap:
                     self.cap = new_cap
                     consecutive_errors = 0
+                    is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov'))
                 time.sleep(0.1)
                 continue
 
@@ -244,12 +251,20 @@ class MasterStreamEngine:
                         self._is_hardware_connected = True
                         with self.lock:
                             self.raw_frame = frame
+                        
+                        if is_local_file:
+                            time.sleep(1.0 / 30.0) # simulate 30fps
                     else:
-                        consecutive_errors += 1
-                        if consecutive_errors > 200: # ~6-8s of persistent failure before restart
-                            self._safe_release_capture()
-                            consecutive_errors = 0
-                        time.sleep(0.03)
+                        if is_local_file:
+                            # Loop the video file!
+                            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            continue
+                        else:
+                            consecutive_errors += 1
+                            if consecutive_errors > 200: # ~6-8s of persistent failure before restart
+                                self._safe_release_capture()
+                                consecutive_errors = 0
+                            time.sleep(0.03)
                 else:
                     # Auto-reconnect real hardware camera periodically in background
                     now = time.time()
@@ -259,6 +274,7 @@ class MasterStreamEngine:
                         if new_cap:
                             self.cap = new_cap
                             consecutive_errors = 0
+                            is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov'))
                     time.sleep(0.05)
             else:
                 time.sleep(0.1)
