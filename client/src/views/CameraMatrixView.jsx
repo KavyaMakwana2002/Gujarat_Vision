@@ -62,42 +62,52 @@ export default function CameraMatrixView({ onSelectCamera }) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Header & Filter Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800 shadow-xl">
-        <div>
-          <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-            <Camera className="w-5 h-5 text-blue-400" /> Sentinel Camera Grid (30 Operational Nodes)
-          </h2>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
-            Live operational RTSP over TCP (103.250.160.189:8554), HLS & WebRTC feeds across Gujarat
-          </p>
+      <div className="premium-glass p-6 rounded-2xl shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5 border border-slate-700/50 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="p-3 bg-blue-500/20 border border-blue-400/30 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+            <Camera className="w-7 h-7 text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-white flex items-center gap-3 tracking-wide drop-shadow-md">
+              Sentinel Camera Grid
+              <span className="text-[10px] font-mono font-bold bg-blue-900/40 text-blue-300 border border-blue-500/30 px-2.5 py-0.5 rounded-md flex items-center shadow-inner">
+                30 Operational Nodes
+              </span>
+            </h2>
+            <p className="text-xs text-slate-400/90 font-mono tracking-wide mt-1.5">
+              Live operational RTSP over TCP (103.250.160.189:8554), HLS & WebRTC feeds across Gujarat
+            </p>
+          </div>
         </div>
 
         {/* Search & District Selector */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
+          <div className="relative group">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 group-focus-within:text-blue-400 transition-colors" />
             <input
               type="text"
               placeholder="Search cam01, city, node..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs font-mono text-slate-200 outline-none w-48 focus:border-blue-500"
+              className="pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-700/50 rounded-xl text-xs font-mono text-slate-200 outline-none w-56 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
             />
           </div>
 
-          <span className="text-xs font-mono px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold flex items-center gap-1.5">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+          <span className="text-[11px] font-mono px-3 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.15)] tracking-widest">
+            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             30 NODES ONLINE
           </span>
         </div>
       </div>
 
       {/* Grid Network Gateway Protocols Info Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
-          <div className="text-slate-400 font-bold mb-1">RTSP OVER TCP (AI INFERENCE)</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+        <div className="premium-glass border border-slate-700/50 rounded-xl p-4 shadow-lg flex flex-col justify-center">
+          <div className="text-slate-400 font-bold tracking-widest mb-1 uppercase text-[10px]">RTSP OVER TCP (AI INFERENCE)</div>
           <div className="text-cyan-400 text-[11px] truncate">rtsp://103.250.160.189:8554/stream/&lt;id&gt;</div>
         </div>
         <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">

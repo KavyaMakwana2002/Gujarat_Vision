@@ -137,17 +137,19 @@ export default function VideoWallView() {
   const numTiles = layout === '2x2' ? 4 : 9;
 
   return (
-    <div className="space-y-4 pb-10">
+    <div className="space-y-6 pb-12">
       {/* Top Controls Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/90 p-4 rounded-2xl border border-slate-800 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-            <Grid className="w-6 h-6 text-blue-400" />
+      <div className="premium-glass flex flex-col lg:flex-row lg:items-center justify-between gap-5 p-5 rounded-2xl border border-slate-700/50 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="p-3 bg-blue-500/20 border border-blue-400/30 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+            <Grid className="w-7 h-7 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-xl font-extrabold text-white flex items-center gap-3 tracking-wide drop-shadow-md">
               Multi-VMS Surveillance Video Wall
-              <span className="text-[11px] font-mono font-normal bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] font-mono font-bold bg-emerald-900/40 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-md flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.15)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 ISOLATED MULTI-STREAM
               </span>

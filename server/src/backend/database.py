@@ -4,9 +4,13 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker
 from src.security.auth import hash_password
 
+from dotenv import load_dotenv
+
+load_dotenv() # Load variables from .env
+
 DB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data'))
 os.makedirs(DB_DIR, exist_ok=True)
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_DIR}/traffic_data.db"
+SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DB_DIR}/traffic_data.db")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -35,6 +39,17 @@ class AdminUser(Base):
     is_active = Column(Boolean, default=True)                    # Account Status
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
+
+class EChallanRecord(Base):
+    __tablename__ = "echallans"
+    id = Column(Integer, primary_key=True, index=True)
+    plate_number = Column(String, index=True, nullable=False)
+    vehicle_type = Column(String, nullable=True)
+    speed = Column(Integer, nullable=True)
+    location = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    status = Column(String, default="DISPATCHED") # DISPATCHED, PAID, PENDING
+    recipient_email = Column(String, nullable=True)
 
 # Create tables
 Base.metadata.create_all(bind=engine)

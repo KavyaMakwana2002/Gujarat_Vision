@@ -69,8 +69,13 @@ from src.ingestion.web_streamer import (
     get_current_source,
     start_camera,
     stop_camera,
-    get_camera_state
+    get_camera_state,
+    get_stream_engine,
+    normalize_cam_key
 )
+import asyncio
+import cv2
+import threading
 
 @app.get("/api/video_feed")
 async def get_live_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Sentinel Grid"):
@@ -80,6 +85,88 @@ async def get_live_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", 
         generate_video_stream(cam_id=clean_cam, city=city, junction=junction),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+# --- SPEED ENFORCEMENT & ANPR ENDPOINTS ---
+from src.detection.speed_detector import SpeedEnforcementDetector, get_speed_violations_log
+from src.alerts.mailer import send_echallan_email
+
+speed_detector_instance = None
+speed_detector_lock = threading.Lock()
+
+def get_speed_detector():
+    global speed_detector_instance
+    with speed_detector_lock:
+        if speed_detector_instance is None:
+            speed_detector_instance = SpeedEnforcementDetector(speed_limit=60.0)
+        return speed_detector_instance
+
+async def generate_speed_video_stream(cam_id: str, city: str, junction: str):
+    clean_id = normalize_cam_key(cam_id)
+    engine = get_stream_engine(clean_id, active=True)
+    detector = get_speed_detector()
+    
+    try:
+        while True:
+            raw_frame = None
+            with engine.lock:
+                if engine.raw_frame is not None:
+                    raw_frame = engine.raw_frame.copy()
+            
+            if raw_frame is not None:
+                h_orig, w_orig = raw_frame.shape[:2]
+                target_w = 640
+                target_h = int(target_w * h_orig / max(1, w_orig))
+                infer_frame = cv2.resize(raw_frame, (target_w, target_h))
+                
+                processed = detector.detect_speed_and_anpr(
+                    infer_frame, 
+                    camera_id=str(engine.active_cam_id).upper(), 
+                    location_name=f"{junction} ({city})"
+                )
+                
+                ret, buffer = cv2.imencode('.jpg', processed, [cv2.IMWRITE_JPEG_QUALITY, 75])
+                if ret:
+                    frame_bytes = buffer.tobytes()
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            await asyncio.sleep(0.033)
+    except asyncio.CancelledError:
+        return
+    except Exception as e:
+        print(f"Speed stream error: {e}")
+        return
+
+@app.get("/api/speed_feed")
+async def get_speed_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Speed Radar Post"):
+    """Dedicated video feed for speed calculation and line crossing annotations."""
+    return StreamingResponse(
+        generate_speed_video_stream(cam_id=cam_id, city=city, junction=junction),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+@app.get("/api/speed_violations")
+def get_speed_violations():
+    """Returns real-time over-speeding logs."""
+    return {
+        "status": "success",
+        "violations": get_speed_violations_log(limit=50)
+    }
+
+class ManualChallanRequest(BaseModel):
+    plate_number: str
+    speed: float
+    location: str
+    vehicle_type: str
+    timestamp: str
+
+@app.post("/api/challan/send")
+def trigger_manual_echallan(req: ManualChallanRequest):
+    """Manually dispatch or re-dispatch an E-Challan."""
+    threading.Thread(target=send_echallan_email, args=(
+        req.plate_number, req.speed, req.location, req.vehicle_type, req.timestamp, "violator.demo@gujarattraffic.gov.in"
+    ), daemon=True).start()
+    return {"status": "success", "message": f"E-Challan dispatched for {req.plate_number}"}
+
 
 @app.post("/api/start_camera")
 def activate_camera(source: str = "0"):
@@ -226,6 +313,30 @@ def get_realtime_alerts():
         "status": "success",
         "total_active_alerts": len(get_live_alerts()),
         "alerts": get_live_alerts()
+    }
+
+class SOSTriggerRequest(BaseModel):
+    camera_id: str = Field(..., description="Camera ID where SOS was detected")
+    location: str = Field(..., description="Location of the SOS event")
+
+@app.post("/api/sos/trigger")
+def trigger_sos_alert(req: SOSTriggerRequest):
+    """Simulate an SOS gesture / panic detection from a specific camera node."""
+    from src.alerts.alert_engine import trigger_smart_city_alert
+    
+    alert = trigger_smart_city_alert(
+        alert_type="CRITICAL_SOS",
+        severity="CRITICAL",
+        message="SOS Distress Gesture Detected (Women Safety Protocol)",
+        location=req.location,
+        camera_id=req.camera_id,
+        action="Dispatch Nearest PCR Van Immediately"
+    )
+    
+    return {
+        "status": "success",
+        "message": "SOS Alert dispatched to Police Control Room",
+        "alert": alert
     }
 
 @app.get("/api/watchlist")

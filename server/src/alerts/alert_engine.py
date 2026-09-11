@@ -59,3 +59,37 @@ def trigger_red_alert(plate: str, vehicle_type: str, match_data: dict, camera_id
 def get_live_alerts() -> List[Dict]:
     """Retrieve all active real-time alerts."""
     return LIVE_ALERTS_LOG[:30]
+
+def trigger_smart_city_alert(alert_type: str, severity: str, message: str, location: str, camera_id: str, action: str) -> dict:
+    """
+    Trigger Smart City & Emergency alerts (Stray Animal, Ambulance, SOS).
+    """
+    alert_id = f"ALT-{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+    
+    alert_record = {
+        "id": alert_id,
+        "plate": "N/A" if alert_type in ["CRITICAL_SOS", "CIVIC_HAZARD"] else "EMERGENCY-108",
+        "vehicle_type": "Pedestrian/Animal" if alert_type in ["CRITICAL_SOS", "CIVIC_HAZARD"] else "Ambulance",
+        "alert_type": alert_type,
+        "location": location,
+        "camera_id": camera_id,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "database_source": "Sentinel AI Engine",
+        "fir_number": "N/A",
+        "police_station": "Municipal Corp / Traffic Control" if alert_type != "CRITICAL_SOS" else "Women Safety Cell",
+        "status": "ACTIVE",
+        "pcr_assigned": action,
+        "severity": severity,
+        "action_required": message
+    }
+    
+    LIVE_ALERTS_LOG.insert(0, alert_record)
+    
+    print("\n" + "="*70)
+    print(f"[!] [{severity} SMART CITY ALERT TRIGGERED] [!]")
+    print(f"[!] Type: {alert_type}")
+    print(f"[!] Message: {message}")
+    print(f"[!] Location: {location} ({camera_id})")
+    print("="*70 + "\n")
+    
+    return alert_record

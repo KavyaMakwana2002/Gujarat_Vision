@@ -345,15 +345,7 @@ class MasterStreamEngine:
         h, w = display_frame.shape[:2]
         
         # High-Tech Police Surveillance HUD
-        cv2.rectangle(display_frame, (10, 10), (w - 10, 42), (10, 15, 26), -1)
-        cv2.putText(display_frame, f"GUJARAT POLICE • CAM #{self.active_cam_id} ({self.active_city.upper()})", (16, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (56, 189, 248), 2)
-        live_tag = "LIVE • REAL CCTV" if self._is_hardware_connected else "CONNECTING..."
-        tag_color = (52, 211, 153) if self._is_hardware_connected else (250, 204, 21)
-        cv2.putText(display_frame, f"{time.strftime('%H:%M:%S')} | {live_tag}", (w - 180, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.38, tag_color, 1)
-
-        cv2.rectangle(display_frame, (10, h - 30), (w - 10, h - 10), (10, 15, 26), -1)
-        feed_mode = "RTSP REAL VIDEO" if self._is_hardware_connected else "CONNECTING NODE..."
-        cv2.putText(display_frame, f"NODE: {self.active_junction} | {feed_mode} | AI ANPR & VAHAN: ACTIVE", (16, h - 16), cv2.FONT_HERSHEY_SIMPLEX, 0.34, (250, 204, 21), 1)
+        # Removed all HUD overlays (black rectangles and text) as requested by user
 
         ret, buffer = cv2.imencode('.jpg', display_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
         if ret:

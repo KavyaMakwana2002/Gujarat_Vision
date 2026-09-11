@@ -6,7 +6,7 @@ import cv2
 import gc
 import threading
 from src.matching.watchlist import check_watchlist_match
-from src.alerts.alert_engine import trigger_red_alert
+from src.alerts.alert_engine import trigger_red_alert, trigger_smart_city_alert
 
 # Real-time circular buffer storing live detection logs for Dashboard & Sentinel Hub
 LIVE_DETECTIONS_LOG = collections.deque(maxlen=150)
@@ -267,7 +267,42 @@ class SentinelDetector:
                             })
                         continue
 
-                    # 3. VEHICLES (CAR, BIKE, AUTO, BUS, TRUCK)
+                    # 3. STRAY ANIMALS (Cow, Dog, Horse, Sheep)
+                    if class_name in ['cow', 'dog', 'horse', 'sheep']:
+                        box_color = (0, 140, 255) # Orange (BGR) for Hazard
+                        label = f"HAZARD: {class_name.upper()} ID:{track_id}"
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
+                        cv2.rectangle(frame, (x1, max(0, y1 - 22)), (x1 + (len(label) * 9), y1), box_color, -1)
+                        cv2.putText(frame, label, (x1 + 3, max(14, y1 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 0, 0), 2)
+                        
+                        last_alert_t = self.plate_alert_times.get(f"ANIMAL_{track_id}", 0.0)
+                        if (current_time - last_alert_t) > 60.0 and track_id not in self.alerted_track_ids:
+                            self.plate_alert_times[f"ANIMAL_{track_id}"] = current_time
+                            self.alerted_track_ids.add(track_id)
+                            trigger_smart_city_alert(
+                                alert_type="CIVIC_HAZARD",
+                                severity="HIGH",
+                                message=f"Stray {class_name.upper()} detected on {location_name}",
+                                location=location_name,
+                                camera_id=camera_id,
+                                action="Dispatch AMC Cattle Catcher Team"
+                            )
+                        
+                        if track_id not in self.saved_track_ids or self.frame_counter % 30 == 0:
+                            self.saved_track_ids.add(track_id)
+                            _TOTAL_OBJECTS_DETECTED += 1
+                            LIVE_DETECTIONS_LOG.appendleft({
+                                "id": generate_unique_detection_id(track_id),
+                                "vehicle_type": "ANIMAL",
+                                "plate_number": class_name.upper(),
+                                "timestamp": datetime.datetime.utcnow().isoformat(),
+                                "location": location_name,
+                                "camera_id": camera_id,
+                                "confidence": round(float(conf_val), 2)
+                            })
+                        continue
+
+                    # 4. VEHICLES (CAR, BIKE, AUTO, BUS, TRUCK)
                     if class_name in ['car', 'motorcycle', 'bus', 'truck']:
                         w_box = x2 - x1
                         h_box = y2 - y1
@@ -331,6 +366,22 @@ class SentinelDetector:
                                         match_data=match_data,
                                         camera_id=camera_id,
                                         location=location_name
+                                    )
+                                    
+                            # Green Corridor - Ambulance heuristic
+                            if any(k in plate_text.upper() for k in ["108", "AMB", "EMG", "EMERGENCY"]) or "AMBULANCE" in plate_text.upper():
+                                box_color = (0, 255, 0) # GREEN
+                                label = f"[+] AMBULANCE [{plate_text}]"
+                                last_alert_t = self.plate_alert_times.get(f"AMB_{plate_text}", 0.0)
+                                if (current_time - last_alert_t) > 60.0:
+                                    self.plate_alert_times[f"AMB_{plate_text}"] = current_time
+                                    trigger_smart_city_alert(
+                                        alert_type="GREEN_CORRIDOR",
+                                        severity="CRITICAL",
+                                        message=f"Ambulance approaching {location_name}. Auto-clearing traffic signals.",
+                                        location=location_name,
+                                        camera_id=camera_id,
+                                        action="Clear signals to Green"
                                     )
 
                         # Record live vehicle/plate into real-time detection log

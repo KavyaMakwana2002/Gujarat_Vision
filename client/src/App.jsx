@@ -8,16 +8,13 @@ import DashboardView from './views/DashboardView';
 import CameraMatrixView from './views/CameraMatrixView';
 import LiveLocationView from './views/LiveLocationView';
 import GisMapView from './views/GisMapView';
-import VehicleRegistryView from './views/VehicleRegistryView';
-import VehicleSearchView from './views/VehicleSearchView';
 import EvidenceVaultView from './views/EvidenceVaultView';
-import AllAlertsView from './views/AllAlertsView';
-import StolenRegistryView from './views/StolenRegistryView';
-import BlacklistTrackerView from './views/BlacklistTrackerView';
+import VehicleIntelligenceHubView from './views/VehicleIntelligenceHubView';
 import LaptopCamScannerView from './views/LaptopCamScannerView';
 import CctvRegistryView from './views/CctvRegistryView';
 import VideoWallView from './views/VideoWallView';
 import VmsFederationHubView from './views/VmsFederationHubView';
+import SmartCityHubView from './views/SmartCityHubView';
 
 import { surveillanceService, API_BASE_URL } from './services/api';
 
@@ -29,12 +26,11 @@ const VALID_VIEWS = [
   'camera-matrix',
   'live-location',
   'gis-map',
-  'vehicle-details',
-  'vehicle-search',
+  'vehicle-intel-hub',
   'record-video',
-  'all-alerts',
-  'stolen-cars',
-  'blacklist-loc',
+  'stray-animal',
+  'green-corridor',
+  'sos-safety',
   'laptop-cam'
 ];
 
@@ -82,7 +78,7 @@ export default function App() {
           };
         }
       }
-    } catch {}
+    } catch { }
     return { id: 'cam01', name: 'Chiman bhai Bridge', city: 'Ahmedabad' };
   };
 
@@ -131,7 +127,7 @@ export default function App() {
     localStorage.setItem('sentinel_active_stream', streamUrl);
 
     // Asynchronously notify backend stream engine without blocking UI
-    surveillanceService.setStreamSource(cleanCam.id).catch(() => {});
+    surveillanceService.setStreamSource(cleanCam.id).catch(() => { });
 
     // Instantly jump to Dashboard view to watch live stream
     handleNavigate('dashboard');
@@ -239,18 +235,14 @@ export default function App() {
             onSelectCamera={handleSelectCamera}
           />
         );
-      case 'vehicle-details':
-        return <VehicleRegistryView />;
-      case 'vehicle-search':
-        return <VehicleSearchView detections={detections} />;
+      case 'vehicle-intel-hub':
+        return <VehicleIntelligenceHubView detections={detections} liveAlerts={liveAlerts} />;
       case 'record-video':
         return <EvidenceVaultView />;
-      case 'all-alerts':
-        return <AllAlertsView alerts={liveAlerts} />;
-      case 'stolen-cars':
-        return <StolenRegistryView />;
-      case 'blacklist-loc':
-        return <BlacklistTrackerView />;
+      case 'stray-animal':
+      case 'green-corridor':
+      case 'sos-safety':
+        return <SmartCityHubView activeFeature={activeView} activeStreamUrl={activeStreamUrl} detections={detections} liveAlerts={liveAlerts} />;
       case 'laptop-cam':
         return <LaptopCamScannerView />;
       default:
@@ -267,7 +259,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-mesh-gradient text-slate-100 flex flex-col font-sans selection:bg-blue-600/30 selection:text-blue-100 transition-colors duration-500">
       {/* Top Navbar */}
       <Navbar
         officerName="Officer Admin"
@@ -276,7 +268,7 @@ export default function App() {
       />
 
       {/* Main Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative z-0">
         {/* Left Sidebar with Clean HTML5 Routing */}
         <Sidebar
           activeView={activeView}
@@ -285,8 +277,13 @@ export default function App() {
         />
 
         {/* Dynamic Main Content Area */}
-        <main className="flex-1 p-6 overflow-y-auto h-[calc(100vh-4rem)] bg-gradient-to-b from-[#030712] via-[#080d1e] to-[#030712]">
-          {renderCurrentView()}
+        <main className="flex-1 p-6 overflow-y-auto h-[calc(100vh-4rem)] relative">
+          {/* Subtle overlay to soften the mesh background in content area */}
+          <div className="absolute inset-0 bg-[#000000]/40 pointer-events-none" />
+
+          <div className="relative z-10 h-full">
+            {renderCurrentView()}
+          </div>
         </main>
       </div>
 

@@ -138,116 +138,118 @@ export default function VmsFederationHubView() {
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header & Action Controls */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 p-5 rounded-2xl shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl shadow-inner">
+      <div className="premium-glass p-6 rounded-2xl shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-5 border border-slate-700/50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex items-start gap-4">
+          <div className="p-3.5 bg-indigo-500/20 border border-indigo-400/30 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.2)]">
             <Network className="w-8 h-8 text-indigo-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <div className="flex items-center gap-3">
+              <span className="bg-indigo-900/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-md uppercase tracking-widest shadow-inner">
                 Model 3 Core
               </span>
-              <h1 className="text-xl font-extrabold text-white tracking-tight">
+              <h1 className="text-xl font-extrabold text-white tracking-wide drop-shadow-md">
                 VMS Federation & Middleware Integration Layer
               </h1>
-              <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+              <span className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-900/30 border border-emerald-500/30 px-2.5 py-0.5 rounded-md shadow-[0_0_10px_rgba(16,185,129,0.15)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 INTEROPERABILITY ONLINE
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400/90 mt-1.5 font-mono tracking-wide">
               Cross-system middleware federating heterogeneous departmental CCTV platforms (Police City VMS + NHAI Highway Tolls + ONVIF Bridges)
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
           <button
             onClick={() => setRefreshKey(Date.now())}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 transition shadow"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600/50 rounded-xl text-xs font-semibold text-slate-200 transition-all duration-300 hover:shadow-[0_0_10px_rgba(255,255,255,0.05)] shadow-inner"
             title="Refresh All Feeds"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Sync Hub</span>
+            <RefreshCw className="w-4 h-4 text-slate-400" />
+            <span className="tracking-wide">Sync Hub</span>
           </button>
 
           <button
             onClick={handleOpenReport}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-xs font-semibold text-indigo-300 transition shadow"
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 rounded-xl text-xs font-semibold text-indigo-300 transition-all duration-300 hover:shadow-[0_0_15px_rgba(99,102,241,0.2)] shadow-inner"
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Analytics Report</span>
+            <FileText className="w-4 h-4" />
+            <span className="tracking-wide">Analytics Report</span>
           </button>
 
           <button
             onClick={() => setShowOnboardModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/25"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all duration-300 shadow-[0_0_15px_rgba(79,70,229,0.4)] border border-blue-400/50 hover:scale-105"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Onboard VMS Vendor</span>
+            <Plus className="w-4 h-4 font-bold" />
+            <span className="tracking-wide">Onboard VMS Vendor</span>
           </button>
         </div>
       </div>
 
       {/* KPI Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center gap-3.5">
-          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="premium-glass p-5 rounded-2xl shadow-xl flex items-center gap-4 border border-blue-500/20 group hover:border-blue-500/40 transition-colors">
+          <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl shadow-inner group-hover:bg-blue-500/20 transition-colors">
             <Server className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Federated VMS Nodes</div>
-            <div className="text-xl font-black text-white mt-0.5">
-              {overview?.federated_systems_count || 2} <span className="text-xs font-normal text-slate-400">Platforms</span>
+            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Federated VMS Nodes</div>
+            <div className="text-2xl font-black text-white mt-0.5 tracking-tight">
+              {overview?.federated_systems_count || 2} <span className="text-[11px] font-mono font-normal text-slate-500">Platforms</span>
             </div>
-            <div className="text-[10px] text-emerald-400 font-mono mt-0.5">100% Handshake Active</div>
+            <div className="text-[10px] text-emerald-400 font-mono tracking-wider mt-1">100% Handshake Active</div>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center gap-3.5">
-          <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
+        <div className="premium-glass p-5 rounded-2xl shadow-xl flex items-center gap-4 border border-cyan-500/20 group hover:border-cyan-500/40 transition-colors">
+          <div className="p-3.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl shadow-inner group-hover:bg-cyan-500/20 transition-colors">
             <Radio className="w-6 h-6 text-cyan-400" />
           </div>
           <div>
-            <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Federated Cameras</div>
-            <div className="text-xl font-black text-white mt-0.5">
-              {overview?.active_cameras || 12} <span className="text-xs font-normal text-slate-400">Streams</span>
+            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Federated Cameras</div>
+            <div className="text-2xl font-black text-white mt-0.5 tracking-tight">
+              {overview?.active_cameras || 12} <span className="text-[11px] font-mono font-normal text-slate-500">Streams</span>
             </div>
-            <div className="text-[10px] text-cyan-400 font-mono mt-0.5">RTSP / ONVIF Profile S</div>
+            <div className="text-[10px] text-cyan-400 font-mono tracking-wider mt-1">RTSP / ONVIF Profile S</div>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center gap-3.5">
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+        <div className="premium-glass p-5 rounded-2xl shadow-xl flex items-center gap-4 border border-amber-500/20 group hover:border-amber-500/40 transition-colors">
+          <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl shadow-inner group-hover:bg-amber-500/20 transition-colors">
             <Cpu className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Event Bus Telemetry</div>
-            <div className="text-xl font-black text-white mt-0.5">
-              11.2 <span className="text-xs font-normal text-slate-400">ms Latency</span>
+            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Event Bus Telemetry</div>
+            <div className="text-2xl font-black text-white mt-0.5 tracking-tight">
+              11.2 <span className="text-[11px] font-mono font-normal text-slate-500">ms Latency</span>
             </div>
-            <div className="text-[10px] text-emerald-400 font-mono mt-0.5">0.00% Packet Loss</div>
+            <div className="text-[10px] text-emerald-400 font-mono tracking-wider mt-1">0.00% Packet Loss</div>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center gap-3.5">
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+        <div className="premium-glass p-5 rounded-2xl shadow-xl flex items-center gap-4 border border-red-500/20 group hover:border-red-500/40 transition-colors cyber-glow-red">
+          <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl shadow-[0_0_10px_rgba(239,68,68,0.2)]">
             <ShieldAlert className="w-6 h-6 text-red-400" />
           </div>
           <div>
-            <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Correlated Incidents</div>
-            <div className="text-xl font-black text-white mt-0.5">
-              {overview?.active_correlations_count || correlations.length} <span className="text-xs font-normal text-red-400 font-bold">Alerts</span>
+            <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold">Correlated Incidents</div>
+            <div className="text-2xl font-black text-white mt-0.5 tracking-tight">
+              {overview?.active_correlations_count || correlations.length} <span className="text-[11px] font-mono font-bold text-red-400/80">Alerts</span>
             </div>
-            <div className="text-[10px] text-red-400 font-mono mt-0.5">Cross-System Hotlist Tracked</div>
+            <div className="text-[10px] text-red-400 font-mono tracking-wider mt-1">Cross-System Hotlist Tracked</div>
           </div>
         </div>
       </div>
 
       {/* Model 3 Visual Architecture Flow Banner */}
-      <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 shadow-xl">
+      <div className="premium-glass border border-slate-700/50 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
         <div className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
           <Layers className="w-4 h-4 text-indigo-400" />
           Federation Architecture Pipeline (Live State)
