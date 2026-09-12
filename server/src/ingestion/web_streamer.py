@@ -68,7 +68,7 @@ def resolve_camera_source(source):
     directly to their 1:1 real RTSP hardware URLs.
     """
     s = str(source).strip()
-    if s.lower().endswith(('.mp4', '.avi', '.mov')):
+    if s.lower().endswith(('.mp4', '.avi', '.mov', '.webm')):
         return s
     if s.lower() in ["webcam", "local", "laptop", "0"]:
         return 0
@@ -104,7 +104,7 @@ def get_detector():
 
 def normalize_cam_key(source):
     s = str(source).strip()
-    if s.lower().endswith(('.mp4', '.avi', '.mov')):
+    if s.lower().endswith(('.mp4', '.avi', '.mov', '.webm')):
         return s
     s = s.lower()
     if s in ["webcam", "local", "laptop", "0"]:
@@ -222,7 +222,7 @@ class MasterStreamEngine:
     def _capture_worker(self):
         consecutive_errors = 0
         last_reconnect_time = 0.0
-        is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov'))
+        is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov', '.webm'))
 
         while self.running:
             if self._stop_pending:
@@ -239,7 +239,7 @@ class MasterStreamEngine:
                 if new_cap:
                     self.cap = new_cap
                     consecutive_errors = 0
-                    is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov'))
+                    is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov', '.webm'))
                 time.sleep(0.1)
                 continue
 
@@ -274,7 +274,7 @@ class MasterStreamEngine:
                         if new_cap:
                             self.cap = new_cap
                             consecutive_errors = 0
-                            is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov'))
+                            is_local_file = str(self.src).lower().endswith(('.mp4', '.avi', '.mov', '.webm'))
                     time.sleep(0.05)
             else:
                 time.sleep(0.1)

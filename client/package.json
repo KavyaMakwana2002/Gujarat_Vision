@@ -12,10 +12,13 @@
     "axios": "^1.6.8",
     "clsx": "^2.1.0",
     "hls.js": "^1.5.7",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.359.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "recharts": "^3.10.1",
     "tailwind-merge": "^2.2.2"
   },
   "devDependencies": {

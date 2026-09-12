@@ -21,8 +21,8 @@ if __name__ == "__main__":
     )
     
     if response["status"] == "success":
-        print("✅ Success! The test E-Challan email was sent.")
+        print("[+] Success! The test E-Challan email was sent.")
         print(response.get("message", "Check your inbox."))
     else:
-        print("❌ Error sending email:")
+        print("[!] Error sending email:")
         print(response["message"])

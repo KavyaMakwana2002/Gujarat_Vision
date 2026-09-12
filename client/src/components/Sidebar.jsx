@@ -30,6 +30,7 @@ export const NAV_ITEMS = [
   { id: 'green-corridor', label: '8. Green Corridor', icon: Crosshair, sub: 'Ambulance Life-Saver', highlight: true },
   { id: 'sos-safety', label: '9. Women Safety SOS', icon: Siren, sub: 'Gesture Panic Dispatch', badgeColor: 'text-pink-400' },
   { id: 'laptop-cam', label: '10. Mobile & Web Cam ANPR', icon: Smartphone, sub: 'Phone Back Cam Scanner', highlight: true },
+  { id: 'speed-challan', label: '11. Speed Radar & E-Challan', icon: Camera, sub: 'Over-speeding Detection', highlight: true },
 ];
 
 export default function Sidebar({ activeView, setActiveView, onLogout }) {

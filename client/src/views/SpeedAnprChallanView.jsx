@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
-import { Zap, Mail, ShieldAlert, Car, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Zap, Mail, ShieldAlert, Car, AlertTriangle, CheckCircle, Radio } from 'lucide-react';
 import { API_BASE_URL, surveillanceService } from '../services/api';
 
 export default function SpeedAnprChallanView({ activeCamera }) {
@@ -9,7 +9,7 @@ export default function SpeedAnprChallanView({ activeCamera }) {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
 
-  const speedStreamUrl = `${API_BASE_URL}/api/speed_feed?cam_id=${activeCamera?.id || 'cam01'}&city=${encodeURIComponent(activeCamera?.city || 'Ahmedabad')}`;
+  const speedStreamUrl = `${API_BASE_URL}/api/speed_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Indian_Traffic,_Vehicles,_Highway_Footage_for_Object_Detection(2160p).webm&city=${encodeURIComponent(activeCamera?.city || 'Ahmedabad')}`;
 
   const fetchViolations = async () => {
     try {
@@ -39,6 +39,43 @@ export default function SpeedAnprChallanView({ activeCamera }) {
         vehicle_type: v.vehicle_type,
         timestamp: v.timestamp
       };
+
+      const res = await fetch(`${API_BASE_URL}/api/challan/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      setToastMsg(`E-Challan Dispatched to ${v.plate_number}`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (e) {
+      setToastMsg("Failed to dispatch E-Challan");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+    setLoading(false);
+  };
+
+  const handleTestLiveChallan = async () => {
+    setLoading(true);
+    try {
+      // Generate realistic Gujarat Number Plate (e.g., GJ-01-AB-1234)
+      const rtoCodes = ['01', '02', '03', '04', '05', '06', '27', '38'];
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const randomRto = rtoCodes[Math.floor(Math.random() * rtoCodes.length)];
+      const randomLetters = letters[Math.floor(Math.random() * letters.length)] + letters[Math.floor(Math.random() * letters.length)];
+      const randomDigits = Math.floor(Math.random() * 9000 + 1000).toString(); // 1000 to 9999
+      const realisticPlate = `GJ-${randomRto}-${randomLetters}-${randomDigits}`;
+
+      const payload = {
+        plate_number: realisticPlate,
+        speed: Math.floor(Math.random() * 50) + 70, // 70 to 120 km/h
+        location: "Test Simulator Highway",
+        vehicle_type: "CAR",
+        timestamp: new Date().toISOString()
+      };
       
       const res = await fetch(`${API_BASE_URL}/api/challan/send`, {
         method: 'POST',
@@ -47,11 +84,11 @@ export default function SpeedAnprChallanView({ activeCamera }) {
       });
       
       const data = await res.json();
-      setToastMsg(`E-Challan Dispatched to ${v.plate_number}`);
+      setToastMsg(`TEST: E-Challan Email Sent for ${payload.plate_number}! Check Server Logs.`);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      setTimeout(() => setShowToast(false), 4000);
     } catch (e) {
-      setToastMsg("Failed to dispatch E-Challan");
+      setToastMsg("Failed to dispatch Test E-Challan");
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     }
@@ -69,7 +106,15 @@ export default function SpeedAnprChallanView({ activeCamera }) {
           </h1>
           <p className="text-sm text-slate-400 mt-1">Live Speed Estimation & Automated E-Challan Mailing System</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+          <button 
+            onClick={handleTestLiveChallan}
+            disabled={loading}
+            className="bg-blue-600/20 border border-blue-500/50 hover:bg-blue-600/40 text-blue-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-2 shadow-lg shadow-blue-500/10"
+            title="Simulate a violation and send a real email"
+          >
+            <Mail className="w-4 h-4" /> TEST LIVE EMAIL
+          </button>
           <div className="bg-slate-900/60 border border-slate-700/50 px-4 py-2 rounded-xl text-center">
             <span className="block text-xs text-slate-400 font-mono">Speed Limit</span>
             <span className="block font-bold text-yellow-400">60 KM/H</span>
@@ -83,20 +128,29 @@ export default function SpeedAnprChallanView({ activeCamera }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* Live Stream Player */}
-        <div className="lg:col-span-2 relative h-[500px] lg:h-auto rounded-2xl border border-slate-700/60 bg-black overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent pointer-events-none z-10" />
-          <VideoPlayer 
-            streamUrl={speedStreamUrl} 
-            title={`Speed Radar • ${activeCamera?.id.toUpperCase()} (${activeCamera?.city})`} 
-            badge="LIVE RADAR"
-            badgeColor="bg-yellow-500"
-          />
+        <div className="lg:col-span-2 relative h-[500px] lg:h-auto rounded-2xl border border-slate-700/60 bg-black overflow-hidden shadow-2xl flex flex-col">
+          <div className="absolute top-4 left-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur border border-slate-700 rounded-lg flex items-center gap-2 text-xs font-mono">
+            <Radio className="w-4 h-4 text-red-500 animate-pulse" />
+            <span className="text-slate-200">LIVE FEED</span>
+          </div>
+
+          <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+            <img
+              src={speedStreamUrl}
+              alt="Live Feed"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/1280x720/0f172a/334155?text=CAMERA+OFFLINE";
+              }}
+            />
+          </div>
         </div>
 
         {/* Violations Log Panel */}
         <div className="premium-glass rounded-2xl border border-slate-700/50 p-5 shadow-xl flex flex-col relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-          
+
           <h3 className="text-sm font-bold text-white font-mono tracking-widest flex items-center gap-2 mb-4 border-b border-slate-700/50 pb-4">
             <ShieldAlert className="w-4 h-4 text-red-400" /> RECENT VIOLATORS
           </h3>
@@ -126,7 +180,7 @@ export default function SpeedAnprChallanView({ activeCamera }) {
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => handleSendManualChallan(v)}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-all hover:text-white border border-slate-600/50"

@@ -66,23 +66,11 @@ def generate_rto_plate(city: str = "Ahmedabad", track_id: int = 1, vehicle_type:
     series_list = series_map.get(vehicle_type.upper(), ["GJ", "AZ", "BK"])
     series = series_list[(track_id * 3) % len(series_list)]
     number = ((track_id * 389 + 1047) % 8999) + 1000
-    return f"{rto_code}-{series}{number}"
+    return f"{rto_code}-{series}-{number}"
 
 def initialize_default_detection_log():
     """Pre-populate realistic initial detections across Gujarat nodes for CAR, BIKE, AUTO, BUS, TRUCK."""
     sample_vehicles = [
-        ("CAR", "GJ-01-BK5268", "SG Highway - Thaltej Junction (Ahmedabad)", "CAM01"),
-        ("BIKE", "GJ-01-EB4004", "Chiman bhai Bridge (Ahmedabad)", "CAM01"),
-        ("AUTO", "GJ-01-TT8921", "Paldi Circle (Ahmedabad)", "CAM04"),
-        ("BUS", "GJ-18-BS3410", "Tri Mandir Adalaj Tollnaka (Gandhinagar)", "CAM12"),
-        ("TRUCK", "GJ-11-TK7720", "Timbavadi Gate (Junagadh)", "CAM06"),
-        ("CAR", "GJ-03-CD9023", "Rajkot Bus Port CCTV (Rajkot)", "CAM17"),
-        ("BIKE", "GJ-05-KY1290", "Visat Teen Rasta (Ahmedabad)", "CAM05"),
-        ("AUTO", "GJ-01-AU4392", "Janpath Corridor (Ahmedabad)", "CAM02"),
-        ("BUS", "GJ-21-ST6541", "Bilimora Station Road (Navsari)", "CAM27"),
-        ("TRUCK", "GJ-12-LD9820", "Gandhidham Rambaugh P2 (Kutch)", "CAM30"),
-        ("CAR", "GJ-24-MK4419", "Patan Dethali Char Rasta (Patan)", "CAM21"),
-        ("BIKE", "GJ-38-RK8834", "Hero Showroom Bypass (Gir Somnath)", "CAM07"),
         ("AUTO", "GJ-06-TX1920", "Alkapuri Junction (Vadodara)", "CAM09"),
         ("BUS", "GJ-05-GS5501", "Ring Road Flyover (Surat)", "CAM14"),
         ("TRUCK", "GJ-08-TR4182", "Deesa Highway Toll (Banaskantha)", "CAM22")
@@ -222,6 +210,24 @@ class SentinelDetector:
                     
                     self.track_last_seen[track_id] = current_time
 
+                    # Women Safety Strict Filter: Hide everything except the main Person in the demo video
+                    if "WOMAN SAFETY.MP4" in str(camera_id).upper() or "WOMAN.MP4" in str(camera_id).upper():
+                        if getattr(self, 'woman_track_id', None) is not None:
+                            # If a main person is already locked, hide all other objects
+                            if track_id != self.woman_track_id:
+                                continue
+                        else:
+                            # If no person locked yet, hide non-person objects
+                            if class_name != 'person':
+                                continue
+                            else:
+                                # Lock onto the first person as the main person
+                                self.woman_track_id = track_id
+
+                    # Disable all detections for the Ambulance demo video as requested by user
+                    if "AMBULANC.MP4" in str(camera_id).upper() or "AMBULANCE.MP4" in str(camera_id).upper():
+                        continue
+
                     # 1. PEDESTRIAN / PERSON DETECTION
                     if class_name == 'person':
                         box_color = (255, 191, 0) # Deep Sky Blue (BGR)
@@ -233,15 +239,7 @@ class SentinelDetector:
                         if track_id not in self.saved_track_ids or self.frame_counter % 30 == 0:
                             self.saved_track_ids.add(track_id)
                             _TOTAL_OBJECTS_DETECTED += 1
-                            LIVE_DETECTIONS_LOG.appendleft({
-                                "id": generate_unique_detection_id(track_id),
-                                "vehicle_type": "PEDESTRIAN",
-                                "plate_number": f"PEDESTRIAN-#{track_id:03d}",
-                                "timestamp": datetime.datetime.utcnow().isoformat(),
-                                "location": location_name,
-                                "camera_id": camera_id,
-                                "confidence": round(float(conf_val), 2)
-                            })
+                            # DO NOT append pedestrians to LIVE_DETECTIONS_LOG to avoid flooding the dashboard intercept log
                         continue
 
                     # 2. BICYCLE / 2-WHEELER
@@ -331,12 +329,33 @@ class SentinelDetector:
                         # Only run OCR once per tracked vehicle or periodically
                         plate_text = self.tracked_plates.get(track_id, None)
                         if plate_text is None or (self.frame_counter % 20 == 0 and not plate_text):
+                            # Smart Ambulance Target Lock for Green Corridor Demo
+                            if "AMBULANC.MP4" in str(camera_id).upper() or "AMBULANCE.MP4" in str(camera_id).upper():
+                                top_crop = frame[max(0, y1):min(frame.shape[0], y1 + int(h_box * 0.25)), max(0, x1):min(frame.shape[1], x2)]
+                                if top_crop.size > 0:
+                                    hsv = cv2.cvtColor(top_crop, cv2.COLOR_BGR2HSV)
+                                    mask_red = cv2.bitwise_or(cv2.inRange(hsv, (0, 120, 150), (10, 255, 255)), cv2.inRange(hsv, (170, 120, 150), (180, 255, 255)))
+                                    mask_blue = cv2.inRange(hsv, (100, 120, 150), (130, 255, 255))
+                                    
+                                    # If it has red and blue siren lights, lock onto it as the ONLY ambulance
+                                    if cv2.countNonZero(mask_red) > 5 and cv2.countNonZero(mask_blue) > 5:
+                                        if getattr(self, 'ambulance_track_id', None) is None:
+                                            self.ambulance_track_id = track_id
+                                            
+                                if getattr(self, 'ambulance_track_id', None) == track_id:
+                                    display_name = "Ambulance"
+                                    plate_text = f"GJ-01-AMB-{100 + (track_id % 100)}"
+                                    self.tracked_plates[track_id] = plate_text
+
                             car_crop = frame[max(0, y1):min(frame.shape[0], y2), max(0, x1):min(frame.shape[1], x2)]
                             if car_crop.size != 0:
                                 extracted = anpr.read_plate(car_crop)
                                 if extracted:
                                     plate_text = extracted
                                     self.tracked_plates[track_id] = plate_text
+
+                        if plate_text == "CHINAN":
+                            continue
 
                         # If OCR didn't catch, generate realistic Gujarat RTO number plate
                         effective_plate = plate_text if plate_text else generate_rto_plate(

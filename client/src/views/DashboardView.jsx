@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import StatCard from '../components/StatCard';
 import VideoPlayer from '../components/VideoPlayer';
-import { Camera, ShieldAlert, Cpu, Car, Shield, Bike, Truck, Bus, Radio, Filter, Layers, Video, ChevronDown, Check } from 'lucide-react';
+import { Camera, ShieldAlert, Cpu, Car, Shield, Bike, Truck, Bus, Radio, Filter, Layers, Video, ChevronDown, Check, Activity } from 'lucide-react';
 import { API_BASE_URL } from '../services/api';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 import { SENTINEL_CAMERAS } from './CameraMatrixView';
 import { TOLL_CAMERAS } from './VideoWallView';
@@ -24,6 +25,23 @@ const VEHICLE_FILTERS = [
 
 export default function DashboardView({ stats, detections, liveAlerts, onConnectCustomStream, activeStreamUrl, activeCamera, onSelectCamera }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+
+  const hourlyData = [
+    { time: '00:00', traffic: 120, violations: 12 },
+    { time: '04:00', traffic: 80, violations: 5 },
+    { time: '08:00', traffic: 450, violations: 45 },
+    { time: '12:00', traffic: 600, violations: 68 },
+    { time: '16:00', traffic: 550, violations: 50 },
+    { time: '20:00', traffic: 300, violations: 25 },
+    { time: '23:59', traffic: 150, violations: 15 },
+  ];
+
+  const incidentData = [
+    { name: 'Over-Speeding', value: 400, color: '#0ea5e9' }, // sky-500
+    { name: 'Red Light Jump', value: 300, color: '#f59e0b' }, // amber-500
+    { name: 'Wrong Side', value: 200, color: '#ef4444' }, // red-500
+    { name: 'SOS/Hazard', value: 50, color: '#ec4899' }, // pink-500
+  ];
 
   const currentCamId = (activeCamera?.id || 'cam01').toLowerCase();
   const currentCameraObj = ALL_MISSION_CAMERAS.find(c => c.id.toLowerCase() === currentCamId) || {
@@ -81,33 +99,33 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
     <div className="space-y-6">
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="TOTAL NETWORK CAMERAS" 
-          value="80,000" 
-          subtext="Gujarat State Matrix (33 Districts)" 
-          icon={Camera} 
-          color="blue" 
+        <StatCard
+          label="TOTAL NETWORK CAMERAS"
+          value="80,000"
+          subtext="Gujarat State Matrix (33 Districts)"
+          icon={Camera}
+          color="blue"
         />
-        <StatCard 
-          label="ACTIVE LIVE DETECTIONS" 
-          value={stats?.total_vehicles ? Number(stats.total_vehicles).toLocaleString() : "14,820"} 
-          subtext="YOLOv8 + ByteTrack Active" 
-          icon={Car} 
-          color="cyan" 
+        <StatCard
+          label="ACTIVE LIVE DETECTIONS"
+          value={stats?.total_vehicles ? Number(stats.total_vehicles).toLocaleString() : "14,820"}
+          subtext="YOLOv8 + ByteTrack Active"
+          icon={Car}
+          color="cyan"
         />
-        <StatCard 
-          label="SECURITY RED ALERTS" 
-          value={liveAlerts?.length || 3} 
-          subtext="Stolen/Hotlisted Matches" 
-          icon={ShieldAlert} 
-          color="red" 
+        <StatCard
+          label="SECURITY RED ALERTS"
+          value={liveAlerts?.length || 3}
+          subtext="Stolen/Hotlisted Matches"
+          icon={ShieldAlert}
+          color="red"
         />
-        <StatCard 
-          label="AI ENGINE STATUS" 
-          value="60.0 FPS" 
-          subtext="Ultra-Low Latency AI Grid" 
-          icon={Cpu} 
-          color="emerald" 
+        <StatCard
+          label="AI ENGINE STATUS"
+          value="60.0 FPS"
+          subtext="Ultra-Low Latency AI Grid"
+          icon={Cpu}
+          color="emerald"
         />
       </div>
 
@@ -195,11 +213,10 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
                   key={cid}
                   onClick={() => found && onSelectCamera && onSelectCamera(found)}
                   title={found ? `${cid.toUpperCase()}: ${found.name} (${found.city})` : cid.toUpperCase()}
-                  className={`w-9 h-8 rounded-lg text-[11px] font-mono font-bold flex items-center justify-center transition-all duration-300 border ${
-                    isCurrent
+                  className={`w-9 h-8 rounded-lg text-[11px] font-mono font-bold flex items-center justify-center transition-all duration-300 border ${isCurrent
                       ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.5)] scale-110 z-10'
                       : 'bg-slate-900/60 text-slate-400 hover:bg-slate-800 hover:text-white border-slate-700/50 hover:border-slate-500 hover:shadow-lg'
-                  }`}
+                    }`}
                 >
                   {String(i + 1).padStart(2, '0')}
                 </button>
@@ -215,10 +232,10 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
           {/* Tactical Bezel Container */}
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 via-cyan-500/10 to-blue-600/20 rounded-2xl blur opacity-50"></div>
           <div className="relative h-full rounded-2xl border border-slate-700/60 bg-black overflow-hidden shadow-2xl">
-            <VideoPlayer 
-              streamUrl={activeStreamUrl || `${API_BASE_URL}/api/video_feed`} 
-              title={cameraTitle} 
-              badge="LIVE AI SCAN" 
+            <VideoPlayer
+              streamUrl={activeStreamUrl || `${API_BASE_URL}/api/video_feed`}
+              title={cameraTitle}
+              badge="LIVE AI SCAN"
             />
           </div>
         </div>
@@ -226,7 +243,7 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
         {/* Live Detections Feed Table with Category Filters */}
         <div className="rounded-2xl border border-slate-700/50 premium-glass p-5 shadow-2xl flex flex-col h-[520px] relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-cyan-900/10 to-transparent pointer-events-none" />
-          
+
           {/* Header */}
           <div className="relative z-10 flex items-center justify-between border-b border-slate-700/50 pb-4 mb-4">
             <h3 className="text-[13px] font-bold text-white font-mono tracking-widest flex items-center gap-2">
@@ -247,11 +264,10 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
                 <button
                   key={f.id}
                   onClick={() => setSelectedCategory(f.id)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold flex items-center gap-2 transition-all duration-300 whitespace-nowrap ${
-                    isActive 
-                      ? 'bg-cyan-600/20 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] border border-cyan-400/40 scale-105' 
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold flex items-center gap-2 transition-all duration-300 whitespace-nowrap ${isActive
+                      ? 'bg-cyan-600/20 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] border border-cyan-400/40 scale-105'
                       : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-700/50 hover:border-slate-600'
-                  }`}
+                    }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'opacity-70'}`} />
                   {f.label}
@@ -264,8 +280,8 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
           <div className="relative z-10 flex-1 overflow-y-auto space-y-2.5 pr-2 font-mono text-xs custom-scrollbar">
             {filteredDetections && filteredDetections.length > 0 ? (
               filteredDetections.slice(0, 25).map((d, i) => (
-                <div 
-                  key={`det-${d.id || 'scan'}-${d.plate_number || 'plate'}-${i}`} 
+                <div
+                  key={`det-${d.id || 'scan'}-${d.plate_number || 'plate'}-${i}`}
                   className="p-3 rounded-xl bg-slate-900/40 border border-slate-700/40 flex items-center justify-between hover:border-slate-500/50 hover:bg-slate-800/60 transition-all duration-300 group shadow-sm hover:shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-2">
@@ -301,6 +317,88 @@ export default function DashboardView({ stats, detections, liveAlerts, onConnect
                 <p className="text-xs tracking-widest uppercase">Scanning Live Feed...</p>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
+        {/* Area Chart: Traffic vs Violations */}
+        <div className="lg:col-span-2 rounded-2xl border border-slate-700/50 premium-glass p-5 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex items-center justify-between border-b border-slate-700/50 pb-4 mb-4">
+            <h3 className="text-[13px] font-bold text-white font-mono tracking-widest flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-400" /> 24-HOUR TRAFFIC FLOW VS VIOLATIONS
+            </h3>
+          </div>
+          <div className="h-[250px] w-full relative z-10">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={hourlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorViolations" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                  itemStyle={{ color: '#e2e8f0' }}
+                />
+                <Area type="monotone" dataKey="traffic" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorTraffic)" name="Total Vehicles" />
+                <Area type="monotone" dataKey="violations" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorViolations)" name="Violations" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Doughnut Chart: Incident Distribution */}
+        <div className="rounded-2xl border border-slate-700/50 premium-glass p-5 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex items-center justify-between border-b border-slate-700/50 pb-4 mb-4">
+            <h3 className="text-[13px] font-bold text-white font-mono tracking-widest flex items-center gap-2">
+              <Layers className="w-4 h-4 text-purple-400" /> INCIDENT DISTRIBUTION
+            </h3>
+          </div>
+          <div className="h-[250px] w-full relative z-10 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={incidentData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {incidentData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                  itemStyle={{ color: '#e2e8f0' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            
+            {/* Custom Legend */}
+            <div className="absolute top-1/2 right-0 transform -translate-y-1/2 flex flex-col gap-3 pr-4 pointer-events-none">
+              {incidentData.map((entry, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                  <span className="text-[10px] text-slate-300 font-mono font-bold tracking-wider">{entry.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -16,6 +16,8 @@ import VideoWallView from './views/VideoWallView';
 import VmsFederationHubView from './views/VmsFederationHubView';
 import VmsAndVideoWallHubView from './views/VmsAndVideoWallHubView';
 import SmartCityHubView from './views/SmartCityHubView';
+import WomenSafetyView from './views/WomenSafetyView';
+import SpeedAnprChallanView from './views/SpeedAnprChallanView';
 
 import { surveillanceService, API_BASE_URL } from './services/api';
 
@@ -30,7 +32,8 @@ const VALID_VIEWS = [
   'stray-animal',
   'green-corridor',
   'sos-safety',
-  'laptop-cam'
+  'laptop-cam',
+  'speed-challan'
 ];
 
 export default function App() {
@@ -232,10 +235,13 @@ export default function App() {
         return <EvidenceVaultView />;
       case 'stray-animal':
       case 'green-corridor':
-      case 'sos-safety':
         return <SmartCityHubView activeFeature={activeView} activeStreamUrl={activeStreamUrl} detections={detections} liveAlerts={liveAlerts} />;
+      case 'sos-safety':
+        return <WomenSafetyView />;
       case 'laptop-cam':
         return <LaptopCamScannerView />;
+      case 'speed-challan':
+        return <SpeedAnprChallanView activeCamera={activeCamera} />;
       default:
         return (
           <DashboardView

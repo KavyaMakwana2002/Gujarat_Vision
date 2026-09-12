@@ -3,11 +3,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import datetime
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER", "gujarattrafficpolice.demo@gmail.com")
 SMTP_PASS = os.getenv("SMTP_PASS", "your_app_password_here")
+
+from src.backend.database import SessionLocal, EChallanRecord
 
 def send_echallan_email(plate_number: str, speed: float, location: str, vehicle_type: str, timestamp: str, recipient_email: str):
     msg = MIMEMultipart('alternative')
@@ -72,8 +77,27 @@ def send_echallan_email(plate_number: str, speed: float, location: str, vehicle_
     </html>
     """
     msg.attach(MIMEText(html_content, 'html'))
+    
+    db = SessionLocal()
     try:
-        if SMTP_PASS == "your_app_password_here":
+        new_challan = EChallanRecord(
+            plate_number=plate_number,
+            vehicle_type=vehicle_type,
+            speed=speed,
+            location=location,
+            recipient_email=recipient_email,
+            status="DISPATCHED"
+        )
+        db.add(new_challan)
+        db.commit()
+        db.refresh(new_challan)
+    except Exception as db_err:
+        print(f"[!] Database EChallan insert error: {db_err}")
+    finally:
+        db.close()
+
+    try:
+        if SMTP_PASS == "your_app_password_here" or not SMTP_PASS:
             print(f"[!] Simulation Mode: Sending E-Challan to {recipient_email} for {plate_number} at {speed}km/h")
             return {"status": "success", "message": "Email simulated successfully (Add credentials to send real emails)."}
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
@@ -83,4 +107,5 @@ def send_echallan_email(plate_number: str, speed: float, location: str, vehicle_
         server.quit()
         return {"status": "success"}
     except Exception as e:
+        print(f"[!] SMTP Error: {e}")
         return {"status": "error", "message": str(e)}

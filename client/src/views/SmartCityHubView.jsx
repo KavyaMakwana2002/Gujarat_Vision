@@ -95,7 +95,7 @@ export default function SmartCityHubView({ activeFeature, activeStreamUrl, detec
             </p>
           </div>
         </div>
-        <button 
+        <button
           onClick={() => simulateAlert(config.simAction)}
           disabled={simLoading}
           className={`px-4 py-2 text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg ${btnClass} disabled:opacity-50`}
@@ -112,10 +112,18 @@ export default function SmartCityHubView({ activeFeature, activeStreamUrl, detec
             <Radio className="w-4 h-4 text-red-500 animate-pulse" />
             <span className="text-slate-200">LIVE FEED</span>
           </div>
-          
+
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-            <img 
-              src={activeFeature === 'stray-animal' ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Animal.mp4&city=Ahmedabad&junction=Stray+Animal+Hotspot` : (activeStreamUrl || `${API_BASE_URL}/api/video_feed?cam_id=cam01`)} 
+            <img
+              src={
+                activeFeature === 'stray-animal' 
+                  ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Animal.mp4&city=Ahmedabad&junction=Stray+Animal+Hotspot` 
+                  : activeFeature === 'green-corridor'
+                  ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Ambulanc.mp4&city=Ahmedabad&junction=Green+Corridor+Route`
+                  : activeFeature === 'sos-safety'
+                  ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Woman Safety.mp4&city=Ahmedabad&junction=Women+Safety+Corridor`
+                  : (activeStreamUrl || `${API_BASE_URL}/api/video_feed?cam_id=cam01`)
+              }
               alt="Live Feed"
               className="w-full h-full object-contain"
               onError={(e) => {
@@ -128,7 +136,7 @@ export default function SmartCityHubView({ activeFeature, activeStreamUrl, detec
 
         {/* Right Sidebar Logs */}
         <div className="flex-1 flex flex-col gap-4 min-h-0">
-          
+
           {/* Active Alerts Panel */}
           <div className={`flex-1 flex flex-col rounded-2xl bg-slate-900/80 border ${borderClass} overflow-hidden shadow-xl`}>
             <div className={`p-3 border-b ${borderClass} flex items-center gap-2`}>

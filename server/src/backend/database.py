@@ -89,9 +89,6 @@ def auto_migrate_db():
 
 auto_migrate_db()
 
-def seed_default_admin():
-    """Seed a default administrator officer account if database has no users."""
-    db = SessionLocal()
 class CctvRegistryItem(Base):
     __tablename__ = "cctv_registry"
     id = Column(Integer, primary_key=True, index=True)
