@@ -3,7 +3,7 @@ import axios from 'axios';
 export const API_BASE_URL = (() => {
   // If running on localhost / 127.0.0.1 in browser, use local backend by default
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return 'http://127.0.0.1:8000';
+    return `http://${window.location.hostname}:8000`; // Point directly to backend with matching hostname
   }
   // If deployed to production (e.g. Vercel), use VITE_API_URL or Render
   return import.meta.env.VITE_API_URL || 'https://gujarat-vision-1.onrender.com';
@@ -41,6 +41,13 @@ export const surveillanceService = {
   setStreamSource: (source) => api.post('/api/set_stream_source', { source }),
   getIngestCatalogue: () => api.get('/api/ingest'),
   connectGateway: (host) => api.post('/api/gateway/connect', { host }),
+  uploadVideo: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/api/upload_video', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 
   // Laptop Camera Live ANPR Scanner
   scanFrame: (payload) => api.post('/api/scanner/ocr_frame', payload),

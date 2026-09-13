@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VideoPlayer from '../components/VideoPlayer';
-import { Zap, Mail, ShieldAlert, Car, AlertTriangle, CheckCircle, Radio } from 'lucide-react';
+import { Zap, Mail, ShieldAlert, Car, AlertTriangle, CheckCircle, Radio, Upload } from 'lucide-react';
 import { API_BASE_URL, surveillanceService } from '../services/api';
 
 export default function SpeedAnprChallanView({ activeCamera }) {
@@ -8,8 +8,27 @@ export default function SpeedAnprChallanView({ activeCamera }) {
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadedCamId, setUploadedCamId] = useState(null);
 
-  const speedStreamUrl = `${API_BASE_URL}/api/speed_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Indian_Traffic,_Vehicles,_Highway_Footage_for_Object_Detection(2160p).webm&city=${encodeURIComponent(activeCamera?.city || 'Ahmedabad')}`;
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const response = await surveillanceService.uploadVideo(file);
+      if (response.data.cam_id) {
+        setUploadedCamId(response.data.cam_id);
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+    }
+    setUploading(false);
+  };
+
+  const speedStreamUrl = uploadedCamId
+    ? `${API_BASE_URL}/api/speed_feed?cam_id=${encodeURIComponent(uploadedCamId)}&city=${encodeURIComponent(activeCamera?.city || 'Ahmedabad')}`
+    : `${API_BASE_URL}/api/speed_feed?cam_id=${encodeURIComponent('c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Indian_Traffic,_Vehicles,_Highway_Footage_for_Object_Detection(2160p).webm')}&city=${encodeURIComponent(activeCamera?.city || 'Ahmedabad')}`;
 
   const fetchViolations = async () => {
     try {
@@ -107,6 +126,10 @@ export default function SpeedAnprChallanView({ activeCamera }) {
           <p className="text-sm text-slate-400 mt-1">Live Speed Estimation & Automated E-Challan Mailing System</p>
         </div>
         <div className="flex gap-4 items-center">
+          <label className="cursor-pointer bg-slate-800 border border-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-2 shadow-lg">
+            <Upload className="w-4 h-4" /> {uploading ? "..." : "Upload Video"}
+            <input type="file" accept="video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+          </label>
           <button 
             onClick={handleTestLiveChallan}
             disabled={loading}

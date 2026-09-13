@@ -21,18 +21,20 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
   const [snapshotSaved, setSnapshotSaved] = useState(false);
   const imgRef = useRef(null);
 
-  // Extract cam_id from streamUrl safely
+  // Extract cam_id from streamUrl safely (preserve file path case!)
   const getCamId = useCallback(() => {
     try {
       const url = new URL(streamUrl, window.location.origin);
-      return (url.searchParams.get('cam_id') || 'cam01').toLowerCase();
+      const raw = url.searchParams.get('cam_id') || 'cam01';
+      // Only lowercase for short cam IDs (like "cam01"), not file paths
+      return raw.includes('/') || raw.includes('\\') ? raw : raw.toLowerCase();
     } catch {
       return 'cam01';
     }
   }, [streamUrl]);
 
   const camId = getCamId();
-  const activeFeedUrl = `${API_BASE_URL}/api/video_feed?cam_id=${camId}&t=${streamKey}`;
+  const activeFeedUrl = `${API_BASE_URL}/api/video_feed?cam_id=${encodeURIComponent(camId)}&t=${streamKey}`;
 
   // Reset stream loading on camera change
   useEffect(() => {
@@ -203,7 +205,6 @@ export default function VideoPlayer({ streamUrl, title = "Live Surveillance Feed
             {/* Live AI MJPEG Stream */}
             <img
               ref={imgRef}
-              crossOrigin="anonymous"
               key={`feed-${camId}-${streamKey}`}
               src={activeFeedUrl}
               alt={title}

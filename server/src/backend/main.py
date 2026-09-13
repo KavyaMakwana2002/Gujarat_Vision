@@ -1,7 +1,9 @@
 import os
 import datetime
+import shutil
+
 from typing import Optional
-from fastapi import FastAPI, Depends, HTTPException, Header, status
+from fastapi import FastAPI, Depends, HTTPException, Header, status, UploadFile, File
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -76,6 +78,15 @@ from src.ingestion.web_streamer import (
 import asyncio
 import cv2
 import threading
+@app.post("/api/upload_video")
+async def upload_video(file: UploadFile = File(...)):
+    uploads_dir = os.path.join(os.path.dirname(__file__), "..", "..", "uploads")
+    os.makedirs(uploads_dir, exist_ok=True)
+    file_path = os.path.abspath(os.path.join(uploads_dir, file.filename))
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    # The file path is correctly returned and will be used as cam_id
+    return {"cam_id": file_path}
 
 @app.get("/api/video_feed")
 async def get_live_video_stream(cam_id: str = "cam01", city: str = "Ahmedabad", junction: str = "Sentinel Grid"):

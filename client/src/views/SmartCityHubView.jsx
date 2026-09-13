@@ -1,9 +1,26 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Siren, ShieldAlert, Zap, Car, Activity, ShieldCheck, Play, MapPin, Radio, Target } from 'lucide-react';
-import { API_BASE_URL } from '../services/api';
+import { AlertTriangle, Siren, ShieldAlert, Zap, Car, Activity, ShieldCheck, Play, MapPin, Radio, Target, Upload } from 'lucide-react';
+import { API_BASE_URL, surveillanceService } from '../services/api';
 
 export default function SmartCityHubView({ activeFeature, activeStreamUrl, detections = [], liveAlerts = [] }) {
   const [simLoading, setSimLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedCamId, setUploadedCamId] = useState(null);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const response = await surveillanceService.uploadVideo(file);
+      if (response.data.cam_id) {
+        setUploadedCamId(response.data.cam_id);
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+    }
+    setUploading(false);
+  };
 
   const simulateAlert = async (type) => {
     setSimLoading(true);
@@ -95,14 +112,21 @@ export default function SmartCityHubView({ activeFeature, activeStreamUrl, detec
             </p>
           </div>
         </div>
-        <button
-          onClick={() => simulateAlert(config.simAction)}
-          disabled={simLoading}
-          className={`px-4 py-2 text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg ${btnClass} disabled:opacity-50`}
-        >
-          <Zap className="w-4 h-4 fill-current" />
-          {simLoading ? "Triggering..." : config.simButtonText}
-        </button>
+        <div className="flex items-center gap-3">
+          <label className={`cursor-pointer px-4 py-2 text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg ${btnClass} disabled:opacity-50`}>
+            <Upload className="w-4 h-4" />
+            {uploading ? "Uploading..." : "Upload Video"}
+            <input type="file" accept="video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+          </label>
+          <button
+            onClick={() => simulateAlert(config.simAction)}
+            disabled={simLoading}
+            className={`px-4 py-2 text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-lg ${btnClass} disabled:opacity-50`}
+          >
+            <Zap className="w-4 h-4 fill-current" />
+            {simLoading ? "Triggering..." : config.simButtonText}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 flex gap-4 min-h-0">
@@ -116,13 +140,15 @@ export default function SmartCityHubView({ activeFeature, activeStreamUrl, detec
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <img
               src={
-                activeFeature === 'stray-animal' 
-                  ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Animal.mp4&city=Ahmedabad&junction=Stray+Animal+Hotspot` 
-                  : activeFeature === 'green-corridor'
-                  ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Ambulanc.mp4&city=Ahmedabad&junction=Green+Corridor+Route`
-                  : activeFeature === 'sos-safety'
-                  ? `${API_BASE_URL}/api/video_feed?cam_id=c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Woman Safety.mp4&city=Ahmedabad&junction=Women+Safety+Corridor`
-                  : (activeStreamUrl || `${API_BASE_URL}/api/video_feed?cam_id=cam01`)
+                uploadedCamId
+                  ? `${API_BASE_URL}/api/video_feed?cam_id=${encodeURIComponent(uploadedCamId)}&city=Uploaded&junction=Custom`
+                  : activeFeature === 'stray-animal'
+                    ? `${API_BASE_URL}/api/video_feed?cam_id=${encodeURIComponent('c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Animal.mp4')}&city=Ahmedabad&junction=Stray+Animal+Hotspot`
+                    : activeFeature === 'green-corridor'
+                      ? `${API_BASE_URL}/api/video_feed?cam_id=${encodeURIComponent('c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Ambulanc.mp4')}&city=Ahmedabad&junction=Green+Corridor+Route`
+                      : activeFeature === 'sos-safety'
+                        ? `${API_BASE_URL}/api/video_feed?cam_id=${encodeURIComponent('c:/Users/KAVYA/OneDrive/Desktop/Gujarat_Cyber_Vision/Woman Safety.mp4')}&city=Ahmedabad&junction=Women+Safety+Corridor`
+                        : (activeStreamUrl || `${API_BASE_URL}/api/video_feed?cam_id=cam01`)
               }
               alt="Live Feed"
               className="w-full h-full object-contain"
